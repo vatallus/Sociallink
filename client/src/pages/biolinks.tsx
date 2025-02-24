@@ -35,7 +35,6 @@ import type { Biolink, SocialLink } from "@shared/schema";
 import { Link } from "wouter";
 
 function validateSlug(slug: string): { isValid: boolean; message?: string } {
-  // Chỉ cho phép chữ thường, số và dấu gạch ngang
   const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   if (!slug) {
@@ -51,9 +50,9 @@ function validateSlug(slug: string): { isValid: boolean; message?: string } {
   }
 
   if (!slugRegex.test(slug)) {
-    return { 
-      isValid: false, 
-      message: "Đường dẫn chỉ được chứa chữ thường, số và dấu gạch ngang" 
+    return {
+      isValid: false,
+      message: "Đường dẫn chỉ được chứa chữ thường, số và dấu gạch ngang",
     };
   }
 
@@ -117,12 +116,11 @@ export default function BiolinksDashboard() {
   });
 
   const handleSlugChange = (value: string) => {
-    // Tự động chuyển đổi thành slug hợp lệ
     const normalizedSlug = value
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9-]/g, '-')  // Thay thế ký tự không hợp lệ bằng dấu gạch ngang
-      .replace(/-+/g, '-');         // Gộp nhiều dấu gạch ngang liên tiếp
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-');
 
     setNewBiolink({ ...newBiolink, slug: normalizedSlug });
 
@@ -132,6 +130,16 @@ export default function BiolinksDashboard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Kiểm tra dữ liệu trước khi gửi
+    if (!newBiolink.title.trim()) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập chức danh",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const validation = validateSlug(newBiolink.slug);
     if (!validation.isValid) {
@@ -144,8 +152,9 @@ export default function BiolinksDashboard() {
     }
 
     try {
-      const response = await fetch(`/api/public/biolinks/by-slug/${newBiolink.slug}`);
-      if (response.ok) {
+      // Kiểm tra slug đã tồn tại
+      const checkSlug = await fetch(`/api/public/biolinks/by-slug/${newBiolink.slug}`);
+      if (checkSlug.ok) {
         toast({
           title: "Lỗi",
           description: "Đường dẫn này đã được sử dụng, vui lòng chọn đường dẫn khác",
@@ -153,9 +162,18 @@ export default function BiolinksDashboard() {
         });
         return;
       }
+
+      // Nếu nhận được lỗi 404, nghĩa là slug chưa tồn tại
+      if (checkSlug.status === 404) {
+        // Tạo biolink mới
+        createBiolinkMutation.mutate(newBiolink);
+      }
     } catch (error) {
-      // Nếu nhận được lỗi 404, có nghĩa là slug chưa được sử dụng
-      createBiolinkMutation.mutate(newBiolink);
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra, vui lòng thử lại sau",
+        variant: "destructive",
+      });
     }
   };
 
