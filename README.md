@@ -16,7 +16,6 @@ A comprehensive SaaS platform for creating and managing personalized biolinks wi
 
 - **Advanced Scheduling System**
   - Dynamic appointment booking
-  - Customizable time slots
   - Buffer time between appointments
   - Multiple duration options
   - Availability management by day and time

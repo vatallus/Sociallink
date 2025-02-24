@@ -20,6 +20,7 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <ProtectedRoute path="/admin" component={Admin} />
       <ProtectedRoute path="/biolinks" component={Biolinks} />
+      {/* Move the username route before the NotFound route */}
       <Route path="/:username" component={PublicBiolink} />
       <Route component={NotFound} />
     </Switch>
