@@ -13,6 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-validator";
 import type { Biolink, SocialLink, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
+import { getQueryFn } from "@/lib/queryClient";
 
 interface ExtendedBiolink extends Biolink {
   socialLinks: SocialLink[];
@@ -24,11 +25,13 @@ export default function PublicBiolinkPage() {
 
   const { data: user, isLoading: userLoading } = useQuery<UserType>({
     queryKey: [`/api/public/users/${username}`],
+    queryFn: getQueryFn({ on401: "throw", credentials: "omit" }),
     enabled: !!username,
   });
 
   const { data: biolink, isLoading: biolinkLoading } = useQuery<ExtendedBiolink>({
     queryKey: [`/api/public/biolinks/${username}`],
+    queryFn: getQueryFn({ on401: "throw", credentials: "omit" }),
     enabled: !!username,
   });
 
