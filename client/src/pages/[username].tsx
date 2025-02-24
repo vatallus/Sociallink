@@ -18,12 +18,12 @@ export default function PublicBiolinkPage() {
   const username = params?.username;
 
   const { data: biolink, isLoading: biolinkLoading } = useQuery<Biolink>({
-    queryKey: ["/api/public/biolinks", username],
+    queryKey: [`/api/public/biolinks/${username}`],
     enabled: !!username,
   });
 
   const { data: socialLinks, isLoading: socialLinksLoading } = useQuery<SocialLink[]>({
-    queryKey: ["/api/public/biolinks", biolink?.id, "social-links"],
+    queryKey: [`/api/public/biolinks/${biolink?.id}/social-links`],
     enabled: !!biolink?.id,
   });
 
