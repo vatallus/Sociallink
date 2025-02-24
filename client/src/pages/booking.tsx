@@ -23,7 +23,12 @@ export default function Booking() {
 
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
-      const res = await apiRequest("POST", "/api/appointments", data);
+      // Format the date to ISO string before sending
+      const formattedData = {
+        ...data,
+        appointmentDate: data.appointmentDate.toISOString(),
+      };
+      const res = await apiRequest("POST", "/api/appointments", formattedData);
       return res.json();
     },
     onSuccess: () => {
@@ -33,10 +38,10 @@ export default function Booking() {
       });
       navigate("/");
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to book appointment. Please try again.",
+        description: error.message || "Failed to book appointment. Please try again.",
         variant: "destructive",
       });
     },
@@ -48,7 +53,7 @@ export default function Booking() {
 
     if (step < 4) {
       setStep(step + 1);
-    } else {
+    } else if (step === 4 && newData.appointmentDate && newData.fullName && newData.phoneNumber) {
       bookingMutation.mutate(newData as InsertAppointment);
     }
   };
