@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, Link as LinkIcon, Upload, User } from "lucide-react";
@@ -47,6 +47,8 @@ import type { Appointment } from "@shared/schema";
 export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -75,6 +77,64 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to upload avatar');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      updateProfileMutation.mutate({ avatarUrl: data.url });
+      toast({
+        title: "Success",
+        description: "Avatar uploaded successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload avatar.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please upload an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { 
+      toast({
+        title: "Error",
+        description: "File size should be less than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatarMutation.mutateAsync(file);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
@@ -115,7 +175,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      {/* Navigation Bar */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <div className="flex items-center gap-4">
@@ -142,6 +201,47 @@ export default function AdminDashboard() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                <div className="flex items-center justify-center">
+                  <Avatar className="h-24 w-24">
+                    {user?.avatarUrl ? (
+                      <AvatarImage src={user.avatarUrl} alt={user?.name || user?.username} />
+                    ) : (
+                      <AvatarFallback>
+                        <User className="h-12 w-12" />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Avatar</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                    >
+                      {uploadingAvatar ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Avatar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -159,18 +259,6 @@ export default function AdminDashboard() {
                     defaultValue={user?.address || ""}
                     onChange={(e) =>
                       updateProfileMutation.mutate({ address: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="avatar">Avatar URL</Label>
-                  <Input
-                    id="avatar"
-                    type="url"
-                    defaultValue={user?.avatarUrl || ""}
-                    placeholder="https://example.com/avatar.jpg"
-                    onChange={(e) =>
-                      updateProfileMutation.mutate({ avatarUrl: e.target.value })
                     }
                   />
                 </div>

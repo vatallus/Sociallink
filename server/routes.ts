@@ -4,6 +4,10 @@ import { storage } from "./storage";
 import { insertAppointmentSchema, insertBiolinkSchema, insertSocialLinkSchema, insertAvailabilitySettingSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import express from 'express';
 
 const updateStatusSchema = z.object({
   status: z.enum(["pending", "confirmed", "cancelled"]),
@@ -12,6 +16,38 @@ const updateStatusSchema = z.object({
 export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
   setupAuth(app);
+
+  // Ensure uploads directory exists
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Configure multer for avatar uploads
+  const storageMulter = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, uploadsDir);
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  });
+
+  const upload = multer({
+    storage: storageMulter,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG and GIF allowed.'));
+      }
+    }
+  });
 
   // Protect all API routes
   const requireAuth = (req: any, res: any, next: any) => {
@@ -239,6 +275,30 @@ export async function registerRoutes(app: Express) {
       res.status(500).json({ error: "Failed to fetch user information" });
     }
   });
+
+  // Add avatar upload route
+  app.post("/api/user/avatar", requireAuth, upload.single('avatar'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Generate URL for the uploaded file
+      const fileUrl = `/uploads/${req.file.filename}`;
+
+      // Update user's avatar URL
+      await storage.updateUser(req.user!.id, {
+        avatarUrl: fileUrl
+      });
+
+      res.json({ url: fileUrl });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to upload avatar" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   return createServer(app);
 }
