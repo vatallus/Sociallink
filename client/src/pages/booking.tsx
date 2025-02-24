@@ -42,15 +42,35 @@ export default function Booking() {
     },
   });
 
-  const handleFormSubmit = (data: Partial<InsertAppointment>) => {
-    const newData = { ...formData, ...data };
-    setFormData(newData);
+  const handleContinue = () => {
+    // Validate required fields for each step
+    if (step === 1 && !formData.appointmentDate) {
+      toast({
+        title: "Error",
+        description: "Please select a date for your appointment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (step === 2 && (!formData.fullName || !formData.phoneNumber)) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (step < 4) {
       setStep(step + 1);
     } else {
-      bookingMutation.mutate(newData as InsertAppointment);
+      bookingMutation.mutate(formData as InsertAppointment);
     }
+  };
+
+  const handleFormSubmit = (data: Partial<InsertAppointment>) => {
+    setFormData({ ...formData, ...data });
   };
 
   return (
@@ -114,16 +134,15 @@ export default function Booking() {
                     Cancel
                   </Button>
                 )}
-                {step < 4 && (
-                  <Button onClick={handleFormSubmit} disabled={bookingMutation.isPending}>
-                    Continue
-                  </Button>
-                )}
-                {step === 4 && (
-                  <Button type="submit" onClick={() => handleFormSubmit(formData)} disabled={bookingMutation.isPending}>
-                    Book Appointment
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleContinue}
+                  disabled={bookingMutation.isPending}
+                  className="ml-auto"
+                >
+                  {step === 4 
+                    ? (bookingMutation.isPending ? "Booking..." : "Confirm Booking")
+                    : "Continue"}
+                </Button>
               </div>
             </div>
           </CardContent>

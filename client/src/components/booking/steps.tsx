@@ -27,15 +27,14 @@ export function StepContent({
   onSubmit,
   isLoading,
 }: StepContentProps) {
-  const form = useForm<InsertAppointment>({
-    resolver: zodResolver(bookingFormSchema),
-    defaultValues: {
-      ...formData,
-      appointmentDate: formData.appointmentDate ? new Date(formData.appointmentDate) : undefined,
-    },
-  });
-
   if (step === 1) {
+    const form = useForm<InsertAppointment>({
+      resolver: zodResolver(bookingFormSchema),
+      defaultValues: {
+        appointmentDate: formData.appointmentDate ? new Date(formData.appointmentDate) : undefined,
+      },
+    });
+
     return (
       <Form {...form}>
         <form 
@@ -71,6 +70,14 @@ export function StepContent({
   }
 
   if (step === 2) {
+    const form = useForm<InsertAppointment>({
+      resolver: zodResolver(bookingFormSchema),
+      defaultValues: {
+        fullName: formData.fullName || '',
+        phoneNumber: formData.phoneNumber || '',
+      },
+    });
+
     return (
       <Form {...form}>
         <form 
