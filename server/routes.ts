@@ -224,5 +224,21 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Add this route with the other public routes
+  app.get("/api/public/users/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Only send non-sensitive user information
+      const { password, ...publicUserInfo } = user;
+      res.json(publicUserInfo);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user information" });
+    }
+  });
+
   return createServer(app);
 }
