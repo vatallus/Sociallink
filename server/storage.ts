@@ -6,6 +6,7 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   getAppointments(): Promise<Appointment[]>;
   getAppointmentsByDate(date: Date): Promise<Appointment[]>;
+  updateAppointmentStatus(id: number, status: string): Promise<Appointment>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -44,6 +45,15 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(appointments.appointmentDate);
+  }
+
+  async updateAppointmentStatus(id: number, status: string): Promise<Appointment> {
+    const [result] = await db
+      .update(appointments)
+      .set({ status })
+      .where(eq(appointments.id, id))
+      .returning();
+    return result;
   }
 }
 
