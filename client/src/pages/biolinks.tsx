@@ -34,6 +34,39 @@ import { SocialLinkValidator, SOCIAL_PLATFORMS, type Platform } from "@/componen
 import type { Biolink, SocialLink } from "@shared/schema";
 import { Link } from "wouter";
 
+function validateSlug(slug: string): { isValid: boolean; message?: string } {
+  // Chỉ cho phép chữ thường, số và dấu gạch ngang
+  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  if (!slug) {
+    return { isValid: false, message: "Vui lòng nhập đường dẫn" };
+  }
+
+  if (slug.length < 3) {
+    return { isValid: false, message: "Đường dẫn phải có ít nhất 3 ký tự" };
+  }
+
+  if (slug.length > 50) {
+    return { isValid: false, message: "Đường dẫn không được vượt quá 50 ký tự" };
+  }
+
+  if (!slugRegex.test(slug)) {
+    return { 
+      isValid: false, 
+      message: "Đường dẫn chỉ được chứa chữ thường, số và dấu gạch ngang" 
+    };
+  }
+
+  if (slug.startsWith('-') || slug.endsWith('-')) {
+    return {
+      isValid: false,
+      message: "Đường dẫn không được bắt đầu hoặc kết thúc bằng dấu gạch ngang"
+    };
+  }
+
+  return { isValid: true };
+}
+
 export default function BiolinksDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -45,6 +78,7 @@ export default function BiolinksDashboard() {
     description: "",
     slug: "",
   });
+  const [slugError, setSlugError] = useState<string>("");
   const [newSocialLink, setNewSocialLink] = useState({
     platform: "" as Platform,
     url: "",
@@ -81,6 +115,49 @@ export default function BiolinksDashboard() {
       });
     },
   });
+
+  const handleSlugChange = (value: string) => {
+    // Tự động chuyển đổi thành slug hợp lệ
+    const normalizedSlug = value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9-]/g, '-')  // Thay thế ký tự không hợp lệ bằng dấu gạch ngang
+      .replace(/-+/g, '-');         // Gộp nhiều dấu gạch ngang liên tiếp
+
+    setNewBiolink({ ...newBiolink, slug: normalizedSlug });
+
+    const validation = validateSlug(normalizedSlug);
+    setSlugError(validation.message || "");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validation = validateSlug(newBiolink.slug);
+    if (!validation.isValid) {
+      toast({
+        title: "Lỗi",
+        description: validation.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/public/biolinks/by-slug/${newBiolink.slug}`);
+      if (response.ok) {
+        toast({
+          title: "Lỗi",
+          description: "Đường dẫn này đã được sử dụng, vui lòng chọn đường dẫn khác",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      // Nếu nhận được lỗi 404, có nghĩa là slug chưa được sử dụng
+      createBiolinkMutation.mutate(newBiolink);
+    }
+  };
 
   const updateBiolinkMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<typeof newBiolink> }) => {
@@ -190,37 +267,6 @@ export default function BiolinksDashboard() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Basic slug validation
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    if (!slugRegex.test(newBiolink.slug)) {
-      toast({
-        title: "Lỗi",
-        description: "Đường dẫn chỉ được chứa chữ thường, số và dấu gạch ngang",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check for existing biolink with same slug
-    try {
-      const response = await fetch(`/api/public/biolinks/by-slug/${newBiolink.slug}`);
-      if (response.ok) {
-        toast({
-          title: "Lỗi",
-          description: "Đường dẫn này đã được sử dụng, vui lòng chọn đường dẫn khác",
-          variant: "destructive",
-        });
-        return;
-      }
-    } catch (error) {
-      // If we get a 404, that means the slug is available
-      createBiolinkMutation.mutate(newBiolink);
-    }
-  };
-
 
   if (isLoading) {
     return (
@@ -275,16 +321,25 @@ export default function BiolinksDashboard() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="slug">Đường dẫn</Label>
+                <Label htmlFor="slug">
+                  Đường dẫn
+                  <span className="text-sm text-muted-foreground ml-2">
+                    (Ví dụ: nguyen-van-a)
+                  </span>
+                </Label>
                 <Input
                   id="slug"
                   value={newBiolink.slug}
-                  onChange={(e) =>
-                    setNewBiolink({ ...newBiolink, slug: e.target.value })
-                  }
+                  onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="ten-bac-si"
                   required
                 />
+                {slugError && (
+                  <p className="text-sm text-destructive">{slugError}</p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Đường dẫn sẽ được sử dụng để tạo link công khai: {window.location.origin}/bio/<span className="font-mono">{newBiolink.slug || "ten-bac-si"}</span>
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="description">Mô tả chuyên môn</Label>
@@ -301,7 +356,7 @@ export default function BiolinksDashboard() {
             <Button
               type="submit"
               className="w-full"
-              disabled={createBiolinkMutation.isPending}
+              disabled={createBiolinkMutation.isPending || !!slugError}
             >
               <Plus className="mr-2 h-4 w-4" />
               Tạo Hồ sơ Mới
