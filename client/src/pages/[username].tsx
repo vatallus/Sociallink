@@ -28,7 +28,7 @@ export default function PublicBiolinkPage() {
     enabled: !!username,
   });
 
-  const { data: socialLinks, isLoading: socialLinksLoading } = useQuery<SocialLink[]>({
+  const { data: socialLinks = [], isLoading: socialLinksLoading } = useQuery<SocialLink[]>({
     queryKey: [`/api/public/biolinks/${biolink?.id}/social-links`],
     enabled: !!biolink?.id,
   });
@@ -93,7 +93,7 @@ export default function PublicBiolinkPage() {
                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
                     >
                       {Icon && <Icon className="w-5 h-5" />}
-                      <span>{platform?.name}</span>
+                      <span>{platform?.name || link.platform}</span>
                     </a>
                   );
                 })}
