@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,13 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment, Biolink } from "@shared/schema";
 import { StepContent } from "@/components/booking/steps";
-import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle } from "lucide-react";
 
 export default function Booking() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<InsertAppointment>>({});
-  const [isSuccess, setIsSuccess] = useState(false);
   const [, navigate] = useLocation();
   const search = useSearch();
   const { toast } = useToast();
@@ -32,12 +31,19 @@ export default function Booking() {
     enabled: !!username,
   });
 
+  // Fetch available time slots when date is selected
+  const { data: availableSlots } = useQuery<Array<{ start: Date; end: Date }>>({
+    queryKey: [`/api/available-slots/${biolink?.userId}/${formData.appointmentDate?.toISOString()}`],
+    enabled: !!biolink?.userId && !!formData.appointmentDate,
+  });
+
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
-      const res = await apiRequest("POST", "/api/appointments", {
+      const formattedData = {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
-      });
+      };
+      const res = await apiRequest("POST", "/api/appointments", formattedData);
       return res.json();
     },
     onSuccess: () => {
@@ -45,7 +51,7 @@ export default function Booking() {
         title: "Success!",
         description: "Your appointment has been booked successfully.",
       });
-      setIsSuccess(true);
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({
@@ -60,32 +66,12 @@ export default function Booking() {
     const newData = { ...formData, ...data };
     setFormData(newData);
 
-    // For steps 1-3, just move to next step
     if (step < 4) {
       setStep(step + 1);
-    } else if (step === 4) {
-      // Validate required fields before submission
-      if (!newData.appointmentDate || !newData.fullName || !newData.phoneNumber) {
-        toast({
-          title: "Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Submit the appointment
+    } else if (step === 4 && newData.appointmentDate && newData.fullName && newData.phoneNumber) {
       bookingMutation.mutate(newData as InsertAppointment);
     }
   };
-
-  if (biolinkLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   if (!username || !biolink) {
     return (
@@ -99,42 +85,14 @@ export default function Booking() {
     );
   }
 
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-background py-8 px-4">
-        <div className="container mx-auto max-w-3xl">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center space-y-4">
-                <CheckCircle className="h-12 w-12 text-green-500" />
-                <h2 className="text-2xl font-bold">Booking Confirmed!</h2>
-                <p className="text-muted-foreground max-w-md">
-                  Your appointment with {biolink.title} has been successfully booked. 
-                  You will receive a confirmation shortly.
-                </p>
-                <div className="flex gap-4 mt-6">
-                  <Button variant="outline" onClick={() => {
-                    setStep(1);
-                    setFormData({});
-                    setIsSuccess(false);
-                  }}>
-                    Book Another
-                  </Button>
-                  <Button onClick={() => navigate(`/${username}`)}>
-                    Return to Profile
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background py-8 px-4">
-      <div className="container mx-auto max-w-3xl">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto max-w-3xl"
+      >
         <Card>
           <CardHeader>
             <CardTitle>Book an Appointment with {biolink.title}</CardTitle>
@@ -170,6 +128,7 @@ export default function Booking() {
                 formData={formData}
                 onSubmit={handleFormSubmit}
                 isLoading={bookingMutation.isPending}
+                availableSlots={availableSlots}
               />
 
               {/* Navigation Buttons */}
@@ -184,25 +143,25 @@ export default function Booking() {
                   </Button>
                 )}
                 {step === 1 && (
-                  <Button variant="outline" onClick={() => navigate(`/${username}`)}>
+                  <Button variant="outline" onClick={() => navigate("/")}>
                     Cancel
                   </Button>
                 )}
-                <Button
+                <Button 
                   onClick={() => {
                     const currentForm = document.querySelector(
-                      step === 1 ? '#dateForm' : step === 2 ? '#infoForm' : ''
+                      step === 1 ? '#dateForm' : '#infoForm'
                     ) as HTMLFormElement;
                     if (currentForm) {
                       currentForm.requestSubmit();
-                    } else {
+                    } else if (step >= 3) {
                       handleFormSubmit(formData);
                     }
                   }}
                   disabled={bookingMutation.isPending}
                   className="ml-auto"
                 >
-                  {step === 4
+                  {step === 4 
                     ? (bookingMutation.isPending ? "Booking..." : "Confirm Booking")
                     : "Continue"}
                 </Button>
@@ -210,7 +169,7 @@ export default function Booking() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }

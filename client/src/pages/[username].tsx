@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRoute, useNavigate } from "wouter";
+import { useRoute } from "wouter";
 import { Loader2 } from "lucide-react";
 import {
   Card,
@@ -11,11 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-validator";
 import type { Biolink, SocialLink } from "@shared/schema";
+import { Link } from "wouter";
 
 export default function PublicBiolinkPage() {
   const [, params] = useRoute("/:username");
   const username = params?.username;
-  const navigate = useNavigate();
 
   const { data: biolink, isLoading: biolinkLoading } = useQuery<Biolink>({
     queryKey: [`/api/public/biolinks/${username}`],
@@ -42,14 +42,12 @@ export default function PublicBiolinkPage() {
         <p className="text-muted-foreground mb-4">
           The requested profile could not be found.
         </p>
-        <Button onClick={() => navigate("/")}>Return Home</Button>
+        <Link href="/">
+          <Button>Return Home</Button>
+        </Link>
       </div>
     );
   }
-
-  const handleBooking = () => {
-    navigate(`/booking?username=${username}`);
-  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -67,14 +65,16 @@ export default function PublicBiolinkPage() {
                   const platform = SOCIAL_PLATFORMS[link.platform as Platform];
                   const Icon = platform?.icon;
                   return (
-                    <button
+                    <a
                       key={link.id}
-                      onClick={() => window.open(link.url, '_blank')}
-                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors w-full text-left"
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
                     >
                       {Icon && <Icon className="w-5 h-5" />}
                       <span>{platform?.name}</span>
-                    </button>
+                    </a>
                   );
                 })}
               </div>
@@ -82,9 +82,11 @@ export default function PublicBiolinkPage() {
 
             {/* Booking Button */}
             <div className="mt-8">
-              <Button onClick={handleBooking} className="w-full">
-                Book an Appointment
-              </Button>
+              <Link href={`/booking?username=${username}`}>
+                <Button className="w-full">
+                  Book an Appointment
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

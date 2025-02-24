@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -12,6 +11,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { bookingFormSchema, type InsertAppointment } from "@shared/schema";
 
 interface StepContentProps {
@@ -19,6 +25,7 @@ interface StepContentProps {
   formData: Partial<InsertAppointment>;
   onSubmit: (data: Partial<InsertAppointment>) => void;
   isLoading: boolean;
+  availableSlots?: Array<{ start: Date; end: Date }>;
 }
 
 export function StepContent({
@@ -26,6 +33,7 @@ export function StepContent({
   formData,
   onSubmit,
   isLoading,
+  availableSlots,
 }: StepContentProps) {
   if (step === 1) {
     const dateForm = useForm<Partial<InsertAppointment>>({
@@ -43,14 +51,35 @@ export function StepContent({
             name="appointmentDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Select Date</FormLabel>
+                <FormLabel>Select Date and Time</FormLabel>
                 <Calendar
                   mode="single"
                   selected={field.value}
-                  onSelect={(date) => field.onChange(date)}
+                  onSelect={field.onChange}
                   disabled={(date) => date < new Date()}
                   className="rounded-md border"
                 />
+                {availableSlots && availableSlots.length > 0 && (
+                  <div className="mt-4">
+                    <FormLabel>Available Time Slots</FormLabel>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {availableSlots.map((slot, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => field.onChange(slot.start)}
+                          className={`p-2 text-sm rounded-md border transition-colors ${
+                            field.value?.getTime() === slot.start.getTime()
+                              ? 'bg-primary text-primary-foreground'
+                              : 'hover:bg-accent'
+                          }`}
+                        >
+                          {format(slot.start, 'h:mm a')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -110,10 +139,10 @@ export function StepContent({
           <h3 className="text-lg font-medium mb-4">Review Your Appointment</h3>
           <div className="space-y-4">
             <div>
-              <label className="font-medium block">Selected Date</label>
+              <label className="font-medium block">Selected Date & Time</label>
               <p className="text-muted-foreground">
                 {formData.appointmentDate
-                  ? format(new Date(formData.appointmentDate), "PPP")
+                  ? format(new Date(formData.appointmentDate), "PPP p")
                   : "Not selected"}
               </p>
             </div>

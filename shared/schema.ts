@@ -33,6 +33,7 @@ export const appointments = pgTable("appointments", {
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
   appointmentDate: timestamp("appointment_date").notNull(),
+  duration: integer("duration").notNull().default(30),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
 });
@@ -66,9 +67,7 @@ export const insertSocialLinkSchema = createInsertSchema(socialLinks).omit({
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
 }).extend({
-  appointmentDate: z.string().or(z.date()),
-  status: z.enum(["pending", "confirmed", "cancelled"]).default("pending"),
-  notes: z.string().optional(),
+  duration: z.number().min(15).max(180),
 });
 
 export const insertAvailabilitySettingSchema = createInsertSchema(availabilitySettings).omit({
@@ -79,6 +78,7 @@ export const bookingFormSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
   phoneNumber: z.string().min(10, "Valid phone number is required"),
   appointmentDate: z.date(),
+  duration: z.number().min(15).max(180),
   notes: z.string().optional(),
 });
 
