@@ -22,19 +22,19 @@ export default function Booking() {
   const search = useSearch();
   const { toast } = useToast();
 
-  // Get username from URL query
-  const username = new URLSearchParams(search).get("username");
+  // Get slug from URL query
+  const slug = new URLSearchParams(search).get("slug");
 
-  // Fetch user's biolink
-  const { data: biolink, isLoading: biolinkLoading } = useQuery<Biolink>({
-    queryKey: [`/api/public/biolinks/${username}`],
-    enabled: !!username,
+  // Fetch biolink data using slug
+  const { data: biolinkData, isLoading: biolinkLoading } = useQuery<Biolink & { user: any }>({
+    queryKey: [`/api/public/biolinks/by-slug/${slug}`],
+    enabled: !!slug,
   });
 
   // Fetch available time slots when date is selected
   const { data: availableSlots } = useQuery<Array<{ start: Date; end: Date }>>({
-    queryKey: [`/api/available-slots/${biolink?.userId}/${formData.appointmentDate?.toISOString()}`],
-    enabled: !!biolink?.userId && !!formData.appointmentDate,
+    queryKey: [`/api/availability/${biolinkData?.userId}/${formData.appointmentDate?.toISOString()}`],
+    enabled: !!biolinkData?.userId && !!formData.appointmentDate,
   });
 
   const bookingMutation = useMutation({
@@ -48,15 +48,15 @@ export default function Booking() {
     },
     onSuccess: () => {
       toast({
-        title: "Success!",
-        description: "Your appointment has been booked successfully.",
+        title: "Thành công!",
+        description: "Đã đặt lịch khám thành công.",
       });
       navigate("/");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to book appointment. Please try again.",
+        title: "Lỗi",
+        description: error.message || "Không thể đặt lịch khám. Vui lòng thử lại.",
         variant: "destructive",
       });
     },
@@ -73,14 +73,14 @@ export default function Booking() {
     }
   };
 
-  if (!username || !biolink) {
+  if (!slug || !biolinkData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
+        <h1 className="text-2xl font-bold mb-4">Không tìm thấy hồ sơ</h1>
         <p className="text-muted-foreground mb-4">
-          The requested profile could not be found.
+          Không tìm thấy hồ sơ bác sĩ bạn yêu cầu.
         </p>
-        <Button onClick={() => navigate("/")}>Return Home</Button>
+        <Button onClick={() => navigate("/")}>Về trang chủ</Button>
       </div>
     );
   }
@@ -95,9 +95,9 @@ export default function Booking() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Book an Appointment with {biolink.title}</CardTitle>
+            <CardTitle>Đặt lịch khám với {biolinkData.title}</CardTitle>
             <CardDescription>
-              Complete the form below to schedule your appointment
+              Hoàn thành các bước bên dưới để đặt lịch khám bệnh
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,10 +114,10 @@ export default function Booking() {
                 ))}
               </div>
               <div className="flex justify-between px-1">
-                <span className="text-sm">Select Date</span>
-                <span className="text-sm">Your Info</span>
-                <span className="text-sm">Review</span>
-                <span className="text-sm">Confirm</span>
+                <span className="text-sm">Chọn ngày</span>
+                <span className="text-sm">Thông tin</span>
+                <span className="text-sm">Xem lại</span>
+                <span className="text-sm">Xác nhận</span>
               </div>
             </div>
 
@@ -139,12 +139,12 @@ export default function Booking() {
                     onClick={() => setStep(step - 1)}
                     disabled={bookingMutation.isPending}
                   >
-                    Back
+                    Quay lại
                   </Button>
                 )}
                 {step === 1 && (
                   <Button variant="outline" onClick={() => navigate("/")}>
-                    Cancel
+                    Hủy
                   </Button>
                 )}
                 <Button 
@@ -162,8 +162,8 @@ export default function Booking() {
                   className="ml-auto"
                 >
                   {step === 4 
-                    ? (bookingMutation.isPending ? "Booking..." : "Confirm Booking")
-                    : "Continue"}
+                    ? (bookingMutation.isPending ? "Đang đặt lịch..." : "Xác nhận đặt lịch")
+                    : "Tiếp tục"}
                 </Button>
               </div>
             </div>
