@@ -51,24 +51,19 @@ export default function Booking() {
     const newData = { ...formData, ...data };
     setFormData(newData);
 
-    if (step < 5) {
+    if (step < 4) {
       setStep(step + 1);
-    } else if (step === 5 && newData.appointmentDate && newData.timeSlotId && newData.fullName && newData.phoneNumber) {
+    } else if (step === 4 && newData.appointmentDate && newData.fullName && newData.phoneNumber) {
       bookingMutation.mutate(newData as InsertAppointment);
     }
   };
 
   const handleContinue = () => {
     // Submit the current form
-    const formId = 
-      step === 1 ? '#dateForm' : 
-      step === 2 ? '#timeSlotForm' : 
-      step === 3 ? '#infoForm' : null;
-
-    const currentForm = formId ? document.querySelector(formId) as HTMLFormElement : null;
+    const currentForm = document.querySelector(step === 1 ? '#dateForm' : '#infoForm') as HTMLFormElement;
     if (currentForm) {
       currentForm.requestSubmit();
-    } else if (step >= 4) {
+    } else if (step >= 3) {
       // For review and confirmation steps, just proceed
       handleFormSubmit(formData);
     }
@@ -93,21 +88,20 @@ export default function Booking() {
             {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
-                {[1, 2, 3, 4, 5].map((num) => (
+                {[1, 2, 3, 4].map((num) => (
                   <div
                     key={num}
-                    className={`w-1/5 h-2 rounded-full mx-1 ${
+                    className={`w-1/4 h-2 rounded-full mx-1 ${
                       num <= step ? "bg-primary" : "bg-muted"
                     }`}
                   />
                 ))}
               </div>
-              <div className="flex justify-between px-1 text-sm">
-                <span>Select Date</span>
-                <span>Select Time</span>
-                <span>Your Info</span>
-                <span>Review</span>
-                <span>Confirm</span>
+              <div className="flex justify-between px-1">
+                <span className="text-sm">Select Date</span>
+                <span className="text-sm">Your Info</span>
+                <span className="text-sm">Review</span>
+                <span className="text-sm">Confirm</span>
               </div>
             </div>
 
@@ -141,7 +135,7 @@ export default function Booking() {
                   disabled={bookingMutation.isPending}
                   className="ml-auto"
                 >
-                  {step === 5 
+                  {step === 4 
                     ? (bookingMutation.isPending ? "Booking..." : "Confirm Booking")
                     : "Continue"}
                 </Button>
