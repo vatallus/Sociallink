@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMutation, useQuery, queryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment, Biolink } from "@shared/schema";
@@ -32,19 +32,11 @@ export default function Booking() {
     enabled: !!username,
   });
 
-  // Fetch available time slots when date is selected
-  const { data: availableSlots } = useQuery<Array<{ start: Date; end: Date }>>({
-    queryKey: [`/api/available-slots/${biolink?.userId}/${formData.appointmentDate?.toISOString()}`],
-    enabled: !!biolink?.userId && !!formData.appointmentDate,
-  });
-
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
-      console.log('Submitting appointment data:', data);
       const formattedData = {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
-        duration: data.duration || 30, // Ensure duration is set
       };
       const res = await apiRequest("POST", "/api/appointments", formattedData);
       return res.json();
@@ -54,7 +46,6 @@ export default function Booking() {
         title: "Success!",
         description: "Your appointment has been booked successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       navigate("/");
     },
     onError: (error: Error) => {
@@ -85,11 +76,7 @@ export default function Booking() {
       }
 
       // Submit the appointment
-      const completeData = {
-        ...newData,
-        duration: newData.duration || 30,
-      };
-      bookingMutation.mutate(completeData as InsertAppointment);
+      bookingMutation.mutate(newData as InsertAppointment);
     }
   };
 
@@ -156,11 +143,6 @@ export default function Booking() {
                 formData={formData}
                 onSubmit={handleFormSubmit}
                 isLoading={bookingMutation.isPending}
-                availableSlots={availableSlots?.map(slot => ({
-                  ...slot,
-                  start: new Date(slot.start),
-                  end: new Date(slot.end)
-                }))}
               />
 
               {/* Navigation Buttons */}

@@ -21,91 +21,6 @@ export async function registerRoutes(app: Express) {
     next();
   };
 
-  // Biolink routes
-  app.post("/api/biolinks", requireAuth, async (req, res) => {
-    try {
-      const biolinkData = insertBiolinkSchema.parse({
-        ...req.body,
-        userId: req.user!.id
-      });
-      const biolink = await storage.createBiolink(biolinkData);
-      res.json(biolink);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid biolink data" });
-    }
-  });
-
-  app.get("/api/biolinks", requireAuth, async (req, res) => {
-    const biolinks = await storage.getBiolinksByUserId(req.user!.id);
-    res.json(biolinks);
-  });
-
-  app.get("/api/biolinks/:id", requireAuth, async (req, res) => {
-    const biolink = await storage.getBiolink(parseInt(req.params.id));
-    if (!biolink || biolink.userId !== req.user!.id) {
-      return res.status(404).json({ error: "Biolink not found" });
-    }
-    res.json(biolink);
-  });
-
-  app.patch("/api/biolinks/:id", requireAuth, async (req, res) => {
-    try {
-      const biolink = await storage.getBiolink(parseInt(req.params.id));
-      if (!biolink || biolink.userId !== req.user!.id) {
-        return res.status(404).json({ error: "Biolink not found" });
-      }
-      const updatedBiolink = await storage.updateBiolink(parseInt(req.params.id), req.body);
-      res.json(updatedBiolink);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid update data" });
-    }
-  });
-
-  // Social link routes
-  app.post("/api/biolinks/:biolinkId/social-links", requireAuth, async (req, res) => {
-    try {
-      const biolink = await storage.getBiolink(parseInt(req.params.biolinkId));
-      if (!biolink || biolink.userId !== req.user!.id) {
-        return res.status(404).json({ error: "Biolink not found" });
-      }
-      const socialLinkData = insertSocialLinkSchema.parse({
-        ...req.body,
-        biolinkId: parseInt(req.params.biolinkId)
-      });
-      const socialLink = await storage.createSocialLink(socialLinkData);
-      res.json(socialLink);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid social link data" });
-    }
-  });
-
-  app.get("/api/biolinks/:biolinkId/social-links", requireAuth, async (req, res) => {
-    const biolink = await storage.getBiolink(parseInt(req.params.biolinkId));
-    if (!biolink || biolink.userId !== req.user!.id) {
-      return res.status(404).json({ error: "Biolink not found" });
-    }
-    const socialLinks = await storage.getSocialLinksByBiolinkId(parseInt(req.params.biolinkId));
-    res.json(socialLinks);
-  });
-
-  app.patch("/api/social-links/:id", requireAuth, async (req, res) => {
-    try {
-      const socialLink = await storage.updateSocialLink(parseInt(req.params.id), req.body);
-      res.json(socialLink);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid update data" });
-    }
-  });
-
-  app.delete("/api/social-links/:id", requireAuth, async (req, res) => {
-    try {
-      await storage.deleteSocialLink(parseInt(req.params.id));
-      res.sendStatus(204);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to delete social link" });
-    }
-  });
-
   // Public biolink routes
   app.get("/api/public/biolinks/:username", async (req, res) => {
     try {
@@ -152,50 +67,17 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/available-slots/:userId/:date", async (req, res) => {
+  // Protected routes below this line
+  app.post("/api/biolinks", requireAuth, async (req, res) => {
     try {
-      const { userId, date } = req.params;
-      if (!date || isNaN(new Date(date).getTime())) {
-        return res.status(400).json({ error: "Invalid date" });
-      }
-
-      console.log(`Fetching slots for user ${userId} on date ${date}`);
-      const slots = await storage.getAvailableTimeSlots(parseInt(userId), new Date(date));
-      console.log(`Found ${slots.length} available slots`);
-      res.json(slots);
-    } catch (error) {
-      console.error("Error fetching available slots:", error);
-      res.status(400).json({ error: "Failed to fetch available slots" });
-    }
-  });
-
-
-  // New availability routes
-  app.post("/api/availability", requireAuth, async (req, res) => {
-    try {
-      const settingData = insertAvailabilitySettingSchema.parse({
+      const biolinkData = insertBiolinkSchema.parse({
         ...req.body,
         userId: req.user!.id
       });
-      const setting = await storage.createAvailabilitySetting(settingData);
-      res.json(setting);
+      const biolink = await storage.createBiolink(biolinkData);
+      res.json(biolink);
     } catch (error) {
-      res.status(400).json({ error: "Invalid availability setting data" });
-    }
-  });
-
-  app.get("/api/availability", requireAuth, async (req, res) => {
-    const settings = await storage.getAvailabilitySettings(req.user!.id);
-    res.json(settings);
-  });
-
-  app.patch("/api/availability/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const setting = await storage.updateAvailabilitySetting(parseInt(id), req.body);
-      res.json(setting);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid availability update request" });
+      res.status(400).json({ error: "Invalid biolink data" });
     }
   });
 
