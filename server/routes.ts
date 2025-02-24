@@ -156,7 +156,16 @@ export async function registerRoutes(app: Express) {
       }
 
       // Return the first biolink (assuming one biolink per user for now)
-      res.json(biolinks[0]);
+      const biolink = biolinks[0];
+
+      // Fetch social links for this biolink
+      const socialLinks = await storage.getSocialLinksByBiolinkId(biolink.id);
+
+      // Return both biolink and its social links
+      res.json({
+        ...biolink,
+        socialLinks
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch biolink" });
     }

@@ -14,6 +14,10 @@ import { SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-valida
 import type { Biolink, SocialLink, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
 
+interface ExtendedBiolink extends Biolink {
+  socialLinks: SocialLink[];
+}
+
 export default function PublicBiolinkPage() {
   const [, params] = useRoute("/:username");
   const username = params?.username;
@@ -23,17 +27,12 @@ export default function PublicBiolinkPage() {
     enabled: !!username,
   });
 
-  const { data: biolink, isLoading: biolinkLoading } = useQuery<Biolink>({
+  const { data: biolink, isLoading: biolinkLoading } = useQuery<ExtendedBiolink>({
     queryKey: [`/api/public/biolinks/${username}`],
     enabled: !!username,
   });
 
-  const { data: socialLinks = [], isLoading: socialLinksLoading } = useQuery<SocialLink[]>({
-    queryKey: [`/api/public/biolinks/${biolink?.id}/social-links`],
-    enabled: !!biolink?.id,
-  });
-
-  if (userLoading || biolinkLoading || socialLinksLoading) {
+  if (userLoading || biolinkLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -54,6 +53,10 @@ export default function PublicBiolinkPage() {
       </div>
     );
   }
+
+  // Add console.log for debugging
+  console.log('Biolink data:', biolink);
+  console.log('Social links:', biolink.socialLinks);
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -79,9 +82,9 @@ export default function PublicBiolinkPage() {
           </CardHeader>
           <CardContent>
             {/* Social Links */}
-            {socialLinks && socialLinks.length > 0 && (
-              <div className="grid gap-4">
-                {socialLinks.map((link) => {
+            {biolink.socialLinks && biolink.socialLinks.length > 0 && (
+              <div className="grid gap-4 mb-8">
+                {biolink.socialLinks.map((link) => {
                   const platform = SOCIAL_PLATFORMS[link.platform as Platform];
                   const Icon = platform?.icon;
                   return (
