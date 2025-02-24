@@ -13,7 +13,7 @@ export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
   setupAuth(app);
 
-  // Protect appointment routes
+  // Protect all API routes
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });

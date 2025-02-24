@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -26,12 +27,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Appointment } from "@shared/schema";
 
 export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/appointments"],
@@ -66,13 +69,21 @@ export default function AdminDashboard() {
     updateStatusMutation.mutate({ id, status });
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-8">
       <Card>
         <CardHeader>
           <CardTitle>Appointment Management</CardTitle>
           <CardDescription>
-            View and manage all appointments
+            Welcome {user?.username}! View and manage all appointments
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,66 +104,64 @@ export default function AdminDashboard() {
             </Select>
           </div>
 
-          {isLoading ? (
-            <div className="text-center">Loading appointments...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Patient Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Patient Name</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAppointments?.map((appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell>
+                    {format(new Date(appointment.appointmentDate), "PPP p")}
+                  </TableCell>
+                  <TableCell>{appointment.fullName}</TableCell>
+                  <TableCell>{appointment.phoneNumber}</TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={
+                        appointment.status === "confirmed" 
+                          ? "default"
+                          : appointment.status === "cancelled"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {appointment.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {appointment.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleStatusUpdate(appointment.id, "confirmed")}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleStatusUpdate(appointment.id, "cancelled")}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAppointments?.map((appointment) => (
-                  <TableRow key={appointment.id}>
-                    <TableCell>
-                      {format(new Date(appointment.appointmentDate), "PPP p")}
-                    </TableCell>
-                    <TableCell>{appointment.fullName}</TableCell>
-                    <TableCell>{appointment.phoneNumber}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          appointment.status === "confirmed" 
-                            ? "default"
-                            : appointment.status === "cancelled"
-                            ? "destructive"
-                            : "outline"
-                        }
-                      >
-                        {appointment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {appointment.status === "pending" && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleStatusUpdate(appointment.id, "confirmed")}
-                            >
-                              Confirm
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleStatusUpdate(appointment.id, "cancelled")}
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
