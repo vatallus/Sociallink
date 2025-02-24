@@ -9,6 +9,9 @@ export const users = pgTable("users", {
   name: text("name"),
   address: text("address"),
   avatarUrl: text("avatar_url"),
+  specialty: text("specialty"),        // Thêm chuyên khoa
+  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
+  workingHours: text("working_hours"), // Thêm giờ làm việc
 });
 
 export const biolinks = pgTable("biolinks", {
@@ -18,6 +21,9 @@ export const biolinks = pgTable("biolinks", {
   description: text("description"),
   slug: text("slug").notNull().unique(),
   theme: text("theme").default("default"),
+  specialty: text("specialty"),        // Thêm chuyên khoa
+  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
+  workingHours: text("working_hours"), // Thêm giờ làm việc
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -39,6 +45,9 @@ export const appointments = pgTable("appointments", {
   duration: integer("duration").notNull().default(30),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
+  biolinkId: serial("biolink_id").references(() => biolinks.id), // Thêm reference đến biolink
+  specialty: text("specialty"),        // Thêm chuyên khoa
+  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
 });
 
 export const availabilitySettings = pgTable("availability_settings", {
@@ -59,6 +68,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: z.string().optional(),
   address: z.string().optional(),
   avatarUrl: z.string().optional(),
+  specialty: z.string().optional(),
+  clinicAddress: z.string().optional(),
+  workingHours: z.string().optional(),
 });
 
 export const insertBiolinkSchema = createInsertSchema(biolinks).omit({
@@ -75,6 +87,9 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
 }).extend({
   duration: z.number().min(15).max(180),
+  biolinkId: z.number().optional(),
+  specialty: z.string().optional(),
+  clinicAddress: z.string().optional(),
 });
 
 export const insertAvailabilitySettingSchema = createInsertSchema(availabilitySettings).omit({
@@ -82,11 +97,14 @@ export const insertAvailabilitySettingSchema = createInsertSchema(availabilitySe
 });
 
 export const bookingFormSchema = z.object({
-  fullName: z.string().min(2, "Full name is required"),
-  phoneNumber: z.string().min(10, "Valid phone number is required"),
+  fullName: z.string().min(2, "Vui lòng nhập họ tên"),
+  phoneNumber: z.string().min(10, "Vui lòng nhập số điện thoại hợp lệ"),
   appointmentDate: z.date(),
   duration: z.number().min(15).max(180),
   notes: z.string().optional(),
+  biolinkId: z.number().optional(), //add biolinkId
+  specialty: z.string().optional(),
+  clinicAddress: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
