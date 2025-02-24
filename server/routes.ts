@@ -106,6 +106,35 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Public biolink routes
+  app.get("/api/public/biolinks/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const biolinks = await storage.getBiolinksByUserId(user.id);
+      if (!biolinks || biolinks.length === 0) {
+        return res.status(404).json({ error: "Biolink not found" });
+      }
+
+      // Return the first biolink (assuming one biolink per user for now)
+      res.json(biolinks[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch biolink" });
+    }
+  });
+
+  app.get("/api/public/biolinks/:id/social-links", async (req, res) => {
+    try {
+      const socialLinks = await storage.getSocialLinksByBiolinkId(parseInt(req.params.id));
+      res.json(socialLinks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch social links" });
+    }
+  });
+
   // Existing appointment routes
   app.post("/api/appointments", requireAuth, async (req, res) => {
     try {
@@ -119,7 +148,7 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/appointments", requireAuth, async (req, res) => {
     const date = req.query.date ? new Date(req.query.date as string) : undefined;
-    const appointments = date 
+    const appointments = date
       ? await storage.getAppointmentsByDate(date)
       : await storage.getAppointments();
     res.json(appointments);

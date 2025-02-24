@@ -10,6 +10,7 @@ import Admin from "@/pages/admin";
 import Biolinks from "@/pages/biolinks";
 import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
+import PublicBiolink from "@/pages/[username]";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <ProtectedRoute path="/admin" component={Admin} />
       <ProtectedRoute path="/biolinks" component={Biolinks} />
+      <Route path="/:username" component={PublicBiolink} />
       <Route component={NotFound} />
     </Switch>
   );
