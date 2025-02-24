@@ -11,7 +11,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { bookingFormSchema, type InsertAppointment } from "@shared/schema";
 
 interface StepContentProps {
@@ -28,8 +27,8 @@ export function StepContent({
   isLoading,
 }: StepContentProps) {
   if (step === 1) {
-    const form = useForm<InsertAppointment>({
-      resolver: zodResolver(bookingFormSchema),
+    const form = useForm<Partial<InsertAppointment>>({
+      resolver: zodResolver(bookingFormSchema.pick({ appointmentDate: true })),
       defaultValues: {
         appointmentDate: formData.appointmentDate ? new Date(formData.appointmentDate) : undefined,
       },
@@ -58,20 +57,14 @@ export function StepContent({
               </FormItem>
             )}
           />
-          <Button 
-            type="submit" 
-            className="w-full"
-          >
-            Continue
-          </Button>
         </form>
       </Form>
     );
   }
 
   if (step === 2) {
-    const form = useForm<InsertAppointment>({
-      resolver: zodResolver(bookingFormSchema),
+    const form = useForm<Partial<InsertAppointment>>({
+      resolver: zodResolver(bookingFormSchema.pick({ fullName: true, phoneNumber: true })),
       defaultValues: {
         fullName: formData.fullName || '',
         phoneNumber: formData.phoneNumber || '',
@@ -110,12 +103,6 @@ export function StepContent({
               </FormItem>
             )}
           />
-          <Button 
-            type="submit" 
-            className="w-full"
-          >
-            Continue
-          </Button>
         </form>
       </Form>
     );
@@ -145,12 +132,6 @@ export function StepContent({
             </div>
           </div>
         </div>
-        <Button 
-          onClick={() => onSubmit(formData)}
-          className="w-full"
-        >
-          Continue to Confirmation
-        </Button>
       </div>
     );
   }
@@ -162,13 +143,6 @@ export function StepContent({
         <p className="text-muted-foreground">
           Please review your appointment details above. Click confirm to schedule your appointment.
         </p>
-        <Button
-          onClick={() => onSubmit(formData)}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? "Booking..." : "Confirm Booking"}
-        </Button>
       </div>
     );
   }

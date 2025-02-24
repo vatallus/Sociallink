@@ -42,8 +42,13 @@ export default function Booking() {
     },
   });
 
+  const handleFormSubmit = (data: Partial<InsertAppointment>) => {
+    const newData = { ...formData, ...data };
+    setFormData(newData);
+    handleContinue();
+  };
+
   const handleContinue = () => {
-    // Validate required fields for each step
     if (step === 1 && !formData.appointmentDate) {
       toast({
         title: "Error",
@@ -67,10 +72,6 @@ export default function Booking() {
     } else {
       bookingMutation.mutate(formData as InsertAppointment);
     }
-  };
-
-  const handleFormSubmit = (data: Partial<InsertAppointment>) => {
-    setFormData({ ...formData, ...data });
   };
 
   return (
