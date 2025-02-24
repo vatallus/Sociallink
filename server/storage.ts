@@ -18,6 +18,7 @@ export interface IStorage {
   getBiolinkBySlug(slug: string): Promise<Biolink | undefined>;
   getBiolinksByUserId(userId: number): Promise<Biolink[]>;
   updateBiolink(id: number, biolink: Partial<InsertBiolink>): Promise<Biolink>;
+  deleteBiolink(id: number): Promise<void>;
 
   // Social link methods
   createSocialLink(socialLink: InsertSocialLink): Promise<SocialLink>;
@@ -89,6 +90,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(biolinks.id, id))
       .returning();
     return result;
+  }
+
+  async deleteBiolink(id: number): Promise<void> {
+    // First delete all social links associated with this biolink
+    await db.delete(socialLinks).where(eq(socialLinks.biolinkId, id));
+    // Then delete the biolink
+    await db.delete(biolinks).where(eq(biolinks.id, id));
   }
 
   // Social link methods

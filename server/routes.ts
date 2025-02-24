@@ -49,8 +49,13 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Protect all API routes
+  // Protect all API routes except public ones
   const requireAuth = (req: any, res: any, next: any) => {
+    // Skip auth check for public routes
+    if (req.path.startsWith('/api/public/')) {
+      return next();
+    }
+
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
@@ -94,6 +99,20 @@ export async function registerRoutes(app: Express) {
       res.json(updatedBiolink);
     } catch (error) {
       res.status(400).json({ error: "Invalid update data" });
+    }
+  });
+
+  // Add delete biolink route
+  app.delete("/api/biolinks/:id", requireAuth, async (req, res) => {
+    try {
+      const biolink = await storage.getBiolink(parseInt(req.params.id));
+      if (!biolink || biolink.userId !== req.user!.id) {
+        return res.status(404).json({ error: "Biolink not found" });
+      }
+      await storage.deleteBiolink(parseInt(req.params.id));
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete biolink" });
     }
   });
 

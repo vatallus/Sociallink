@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Link as LinkIcon, Plus } from "lucide-react";
+import { Loader2, Link as LinkIcon, Plus, Edit, Trash } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -38,6 +38,8 @@ export default function BiolinksDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [selectedBiolink, setSelectedBiolink] = useState<Biolink | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingBiolink, setEditingBiolink] = useState<Biolink | null>(null);
   const [newBiolink, setNewBiolink] = useState({
     title: "",
     description: "",
@@ -80,6 +82,29 @@ export default function BiolinksDashboard() {
     },
   });
 
+  const updateBiolinkMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<typeof newBiolink> }) => {
+      const res = await apiRequest("PATCH", `/api/biolinks/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/biolinks"] });
+      setIsEditModalOpen(false);
+      setEditingBiolink(null);
+      toast({
+        title: "Success",
+        description: "Biolink updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update biolink.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createSocialLinkMutation = useMutation({
     mutationFn: async (data: typeof newSocialLink & { biolinkId: number }) => {
       const res = await apiRequest(
@@ -108,12 +133,61 @@ export default function BiolinksDashboard() {
     },
   });
 
+  const deleteBiolinkMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/biolinks/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/biolinks"] });
+      toast({
+        title: "Success",
+        description: "Biolink deleted successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete biolink.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddSocialLink = () => {
     if (!selectedBiolink || !isUrlValid) return;
     createSocialLinkMutation.mutate({
       ...newSocialLink,
       biolinkId: selectedBiolink.id,
     });
+  };
+
+  const handleEdit = (biolink: Biolink) => {
+    setEditingBiolink(biolink);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateBiolink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBiolink) return;
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      slug: formData.get('slug') as string,
+    };
+
+    updateBiolinkMutation.mutate({
+      id: editingBiolink.id,
+      data,
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm("Are you sure you want to delete this biolink?");
+    if (confirmed) {
+      await deleteBiolinkMutation.mutateAsync(id);
+    }
   };
 
   if (isLoading) {
@@ -126,7 +200,6 @@ export default function BiolinksDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      {/* Navigation Bar */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Biolinks Management</h1>
         <div className="flex gap-4">
@@ -210,8 +283,29 @@ export default function BiolinksDashboard() {
             {biolinks?.map((biolink) => (
               <Card key={biolink.id}>
                 <CardHeader>
-                  <CardTitle>{biolink.title}</CardTitle>
-                  <CardDescription>{biolink.description}</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{biolink.title}</CardTitle>
+                      <CardDescription>{biolink.description}</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(biolink)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(biolink.id)}
+                        disabled={deleteBiolinkMutation.isPending}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -314,6 +408,67 @@ export default function BiolinksDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Biolink Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Biolink</DialogTitle>
+            <DialogDescription>
+              Update your biolink information
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateBiolink}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input
+                  id="edit-title"
+                  name="title"
+                  defaultValue={editingBiolink?.title}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-slug">Slug</Label>
+                <Input
+                  id="edit-slug"
+                  name="slug"
+                  defaultValue={editingBiolink?.slug}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Input
+                  id="edit-description"
+                  name="description"
+                  defaultValue={editingBiolink?.description}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateBiolinkMutation.isPending}
+              >
+                {updateBiolinkMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

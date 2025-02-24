@@ -47,16 +47,12 @@ export default function PublicBiolinkPage() {
         <p className="text-muted-foreground mb-4">
           The requested profile could not be found.
         </p>
-        <Link href="/">
-          <Button>Return Home</Button>
-        </Link>
+        <Button asChild>
+          <Link href="/">Return Home</Link>
+        </Button>
       </div>
     );
   }
-
-  // Add console.log for debugging
-  console.log('Biolink data:', biolink);
-  console.log('Social links:', biolink.socialLinks);
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -87,17 +83,23 @@ export default function PublicBiolinkPage() {
                 {biolink.socialLinks.map((link) => {
                   const platform = SOCIAL_PLATFORMS[link.platform as Platform];
                   const Icon = platform?.icon;
+
                   return (
-                    <a
+                    <Button
                       key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
+                      variant="outline"
+                      className="w-full flex items-center gap-3 justify-start"
+                      asChild
                     >
-                      {Icon && <Icon className="w-5 h-5" />}
-                      <span>{platform?.name || link.platform}</span>
-                    </a>
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {Icon && <Icon className="w-5 h-5" />}
+                        <span>{platform?.name || link.platform}</span>
+                      </a>
+                    </Button>
                   );
                 })}
               </div>
@@ -105,11 +107,11 @@ export default function PublicBiolinkPage() {
 
             {/* Booking Button */}
             <div className="mt-8">
-              <Link href={`/booking?username=${username}`}>
-                <Button className="w-full">
+              <Button className="w-full" asChild>
+                <Link href={`/booking?username=${username}`}>
                   Book an Appointment
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
