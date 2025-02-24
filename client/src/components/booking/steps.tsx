@@ -12,13 +12,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { bookingFormSchema, type InsertAppointment } from "@shared/schema";
 
 interface BookingStepsProps {
@@ -58,32 +51,6 @@ export function BookingSteps({
                       disabled={(date) => date < new Date()}
                       className="rounded-md border"
                     />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      defaultValue={field.value?.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                        <SelectItem value="60">1 hour</SelectItem>
-                        <SelectItem value="90">1.5 hours</SelectItem>
-                        <SelectItem value="120">2 hours</SelectItem>
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -141,10 +108,6 @@ export function BookingSteps({
                       ? format(formData.appointmentDate, "PPP")
                       : "Not selected"}
                   </p>
-                </div>
-                <div>
-                  <label className="font-medium">Duration</label>
-                  <p>{formData.duration} minutes</p>
                 </div>
                 <div>
                   <label className="font-medium">Full Name</label>

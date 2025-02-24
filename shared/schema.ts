@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -13,7 +13,6 @@ export const appointments = pgTable("appointments", {
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
   appointmentDate: timestamp("appointment_date").notNull(),
-  duration: integer("duration").notNull(),
   status: text("status").notNull().default("pending"),
 });
 
@@ -35,5 +34,4 @@ export const bookingFormSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
   phoneNumber: z.string().min(10, "Valid phone number is required"),
   appointmentDate: z.date(),
-  duration: z.number().min(30).max(120),
 });
