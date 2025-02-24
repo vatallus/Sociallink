@@ -45,32 +45,22 @@ export default function Booking() {
   const handleFormSubmit = (data: Partial<InsertAppointment>) => {
     const newData = { ...formData, ...data };
     setFormData(newData);
-    handleContinue();
-  };
-
-  const handleContinue = () => {
-    if (step === 1 && !formData.appointmentDate) {
-      toast({
-        title: "Error",
-        description: "Please select a date for your appointment.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (step === 2 && (!formData.fullName || !formData.phoneNumber)) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (step < 4) {
       setStep(step + 1);
     } else {
-      bookingMutation.mutate(formData as InsertAppointment);
+      bookingMutation.mutate(newData as InsertAppointment);
+    }
+  };
+
+  const handleContinue = () => {
+    // Submit the current form
+    const currentForm = document.querySelector(step === 1 ? '#dateForm' : '#infoForm') as HTMLFormElement;
+    if (currentForm) {
+      currentForm.requestSubmit();
+    } else if (step >= 3) {
+      // For review and confirmation steps, just proceed
+      handleFormSubmit(formData);
     }
   };
 

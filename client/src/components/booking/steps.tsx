@@ -27,7 +27,7 @@ export function StepContent({
   isLoading,
 }: StepContentProps) {
   if (step === 1) {
-    const form = useForm<Partial<InsertAppointment>>({
+    const dateForm = useForm<Partial<InsertAppointment>>({
       resolver: zodResolver(bookingFormSchema.pick({ appointmentDate: true })),
       defaultValues: {
         appointmentDate: formData.appointmentDate ? new Date(formData.appointmentDate) : undefined,
@@ -35,13 +35,10 @@ export function StepContent({
     });
 
     return (
-      <Form {...form}>
-        <form 
-          onSubmit={form.handleSubmit((data) => onSubmit(data))} 
-          className="space-y-6"
-        >
+      <Form {...dateForm}>
+        <form id="dateForm" onSubmit={dateForm.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
-            control={form.control}
+            control={dateForm.control}
             name="appointmentDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
@@ -63,7 +60,7 @@ export function StepContent({
   }
 
   if (step === 2) {
-    const form = useForm<Partial<InsertAppointment>>({
+    const infoForm = useForm<Partial<InsertAppointment>>({
       resolver: zodResolver(bookingFormSchema.pick({ fullName: true, phoneNumber: true })),
       defaultValues: {
         fullName: formData.fullName || '',
@@ -72,13 +69,10 @@ export function StepContent({
     });
 
     return (
-      <Form {...form}>
-        <form 
-          onSubmit={form.handleSubmit((data) => onSubmit(data))} 
-          className="space-y-6"
-        >
+      <Form {...infoForm}>
+        <form id="infoForm" onSubmit={infoForm.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
-            control={form.control}
+            control={infoForm.control}
             name="fullName"
             render={({ field }) => (
               <FormItem>
@@ -91,7 +85,7 @@ export function StepContent({
             )}
           />
           <FormField
-            control={form.control}
+            control={infoForm.control}
             name="phoneNumber"
             render={({ field }) => (
               <FormItem>
