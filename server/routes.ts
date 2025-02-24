@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertBiolinkSchema, insertSocialLinkSchema } from "@shared/schema";
+import { insertAppointmentSchema, insertBiolinkSchema, insertSocialLinkSchema, insertAvailabilitySettingSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 
@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Existing appointment routes
+  // Updated and new appointment routes
   app.post("/api/appointments", requireAuth, async (req, res) => {
     try {
       const appointmentData = insertAppointmentSchema.parse(req.body);
@@ -162,6 +162,49 @@ export async function registerRoutes(app: Express) {
       res.json(appointment);
     } catch (error) {
       res.status(400).json({ error: "Invalid status update request" });
+    }
+  });
+
+  // New availability routes
+  app.post("/api/availability", requireAuth, async (req, res) => {
+    try {
+      const settingData = insertAvailabilitySettingSchema.parse({
+        ...req.body,
+        userId: req.user!.id
+      });
+      const setting = await storage.createAvailabilitySetting(settingData);
+      res.json(setting);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid availability setting data" });
+    }
+  });
+
+  app.get("/api/availability", requireAuth, async (req, res) => {
+    const settings = await storage.getAvailabilitySettings(req.user!.id);
+    res.json(settings);
+  });
+
+  app.patch("/api/availability/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const setting = await storage.updateAvailabilitySetting(parseInt(id), req.body);
+      res.json(setting);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid availability update request" });
+    }
+  });
+
+  app.get("/api/available-slots", requireAuth, async (req, res) => {
+    try {
+      const date = new Date(req.query.date as string);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ error: "Invalid date" });
+      }
+
+      const slots = await storage.getAvailableTimeSlots(req.user!.id, date);
+      res.json(slots);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to fetch available slots" });
     }
   });
 

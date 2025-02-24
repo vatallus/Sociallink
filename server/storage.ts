@@ -1,6 +1,9 @@
-import { appointments, users, biolinks, socialLinks, type Appointment, type InsertAppointment, type User, type InsertUser, type Biolink, type InsertBiolink, type SocialLink, type InsertSocialLink } from "@shared/schema";
+import { appointments, users, biolinks, socialLinks, availabilitySettings, 
+  type Appointment, type InsertAppointment, type User, type InsertUser, 
+  type Biolink, type InsertBiolink, type SocialLink, type InsertSocialLink,
+  type AvailabilitySetting, type InsertAvailabilitySetting } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, between } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -25,7 +28,14 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   getAppointments(): Promise<Appointment[]>;
   getAppointmentsByDate(date: Date): Promise<Appointment[]>;
+  getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]>;
   updateAppointmentStatus(id: number, status: string): Promise<Appointment>;
+
+  // Availability methods
+  createAvailabilitySetting(setting: InsertAvailabilitySetting): Promise<AvailabilitySetting>;
+  getAvailabilitySettings(userId: number): Promise<AvailabilitySetting[]>;
+  updateAvailabilitySetting(id: number, setting: Partial<InsertAvailabilitySetting>): Promise<AvailabilitySetting>;
+  getAvailableTimeSlots(userId: number, date: Date): Promise<Array<{ start: Date; end: Date }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -148,6 +158,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(appointments.appointmentDate);
   }
 
+  async getAppointmentsByDateRange(startDate: Date, endDate: Date): Promise<Appointment[]> {
+    return await db
+      .select()
+      .from(appointments)
+      .where(
+        and(
+          gte(appointments.appointmentDate, startDate),
+          lte(appointments.appointmentDate, endDate)
+        )
+      )
+      .orderBy(appointments.appointmentDate);
+  }
+
   async updateAppointmentStatus(id: number, status: string): Promise<Appointment> {
     const [result] = await db
       .update(appointments)
@@ -155,6 +178,93 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.id, id))
       .returning();
     return result;
+  }
+
+  // Availability methods
+  async createAvailabilitySetting(setting: InsertAvailabilitySetting): Promise<AvailabilitySetting> {
+    const [result] = await db
+      .insert(availabilitySettings)
+      .values(setting)
+      .returning();
+    return result;
+  }
+
+  async getAvailabilitySettings(userId: number): Promise<AvailabilitySetting[]> {
+    return await db
+      .select()
+      .from(availabilitySettings)
+      .where(eq(availabilitySettings.userId, userId))
+      .orderBy(availabilitySettings.dayOfWeek);
+  }
+
+  async updateAvailabilitySetting(
+    id: number,
+    setting: Partial<InsertAvailabilitySetting>
+  ): Promise<AvailabilitySetting> {
+    const [result] = await db
+      .update(availabilitySettings)
+      .set(setting)
+      .where(eq(availabilitySettings.id, id))
+      .returning();
+    return result;
+  }
+
+  async getAvailableTimeSlots(userId: number, date: Date): Promise<Array<{ start: Date; end: Date }>> {
+    const dayOfWeek = date.getDay();
+    const settings = await db
+      .select()
+      .from(availabilitySettings)
+      .where(
+        and(
+          eq(availabilitySettings.userId, userId),
+          eq(availabilitySettings.dayOfWeek, dayOfWeek),
+          eq(availabilitySettings.isAvailable, true)
+        )
+      );
+
+    if (!settings.length) return [];
+
+    const setting = settings[0];
+    const [startHour, startMinute] = setting.startTime.split(":").map(Number);
+    const [endHour, endMinute] = setting.endTime.split(":").map(Number);
+
+    const startTime = new Date(date);
+    startTime.setHours(startHour, startMinute, 0, 0);
+
+    const endTime = new Date(date);
+    endTime.setHours(endHour, endMinute, 0, 0);
+
+    const slots: Array<{ start: Date; end: Date }> = [];
+    let currentSlot = new Date(startTime);
+
+    while (currentSlot < endTime) {
+      const slotEnd = new Date(currentSlot);
+      slotEnd.setMinutes(slotEnd.getMinutes() + setting.slotDuration);
+
+      if (slotEnd <= endTime) {
+        slots.push({
+          start: new Date(currentSlot),
+          end: new Date(slotEnd),
+        });
+      }
+
+      currentSlot.setMinutes(currentSlot.getMinutes() + setting.slotDuration + setting.bufferTime);
+    }
+
+    // Filter out slots that overlap with existing appointments
+    const existingAppointments = await this.getAppointmentsByDate(date);
+
+    return slots.filter(slot => {
+      return !existingAppointments.some(appointment => {
+        const appointmentEnd = new Date(appointment.appointmentDate);
+        appointmentEnd.setMinutes(appointmentEnd.getMinutes() + appointment.duration);
+
+        return (
+          (slot.start >= appointment.appointmentDate && slot.start < appointmentEnd) ||
+          (slot.end > appointment.appointmentDate && slot.end <= appointmentEnd)
+        );
+      });
+    });
   }
 }
 

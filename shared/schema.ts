@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -28,16 +28,27 @@ export const socialLinks = pgTable("social_links", {
   isActive: text("is_active").default("true"),
 });
 
-// Existing schemas
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
   appointmentDate: timestamp("appointment_date").notNull(),
+  duration: integer("duration").notNull().default(30),
   status: text("status").notNull().default("pending"),
+  notes: text("notes"),
 });
 
-// Insert schemas
+export const availabilitySettings = pgTable("availability_settings", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => users.id),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  isAvailable: boolean("is_available").default(true),
+  bufferTime: integer("buffer_time").default(15),
+  slotDuration: integer("slot_duration").default(30),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -55,15 +66,22 @@ export const insertSocialLinkSchema = createInsertSchema(socialLinks).omit({
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
+}).extend({
+  duration: z.number().min(15).max(180),
+});
+
+export const insertAvailabilitySettingSchema = createInsertSchema(availabilitySettings).omit({
+  id: true,
 });
 
 export const bookingFormSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
   phoneNumber: z.string().min(10, "Valid phone number is required"),
   appointmentDate: z.date(),
+  duration: z.number().min(15).max(180),
+  notes: z.string().optional(),
 });
 
-// Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -75,3 +93,6 @@ export type SocialLink = typeof socialLinks.$inferSelect;
 
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+
+export type AvailabilitySetting = typeof availabilitySettings.$inferSelect;
+export type InsertAvailabilitySetting = z.infer<typeof insertAvailabilitySettingSchema>;
