@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import Home from "@/pages/home";
 import Booking from "@/pages/booking";
 import Admin from "@/pages/admin";
+import Biolinks from "@/pages/biolinks";
 import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/booking" component={Booking} />
       <Route path="/auth" component={Auth} />
       <ProtectedRoute path="/admin" component={Admin} />
+      <ProtectedRoute path="/biolinks" component={Biolinks} />
       <Route component={NotFound} />
     </Switch>
   );
