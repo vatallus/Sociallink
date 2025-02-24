@@ -194,14 +194,15 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/available-slots", requireAuth, async (req, res) => {
+  // Update the available slots route
+  app.get("/api/available-slots/:userId/:date", async (req, res) => {
     try {
-      const date = new Date(req.query.date as string);
-      if (isNaN(date.getTime())) {
+      const { userId, date } = req.params;
+      if (!date || isNaN(new Date(date).getTime())) {
         return res.status(400).json({ error: "Invalid date" });
       }
 
-      const slots = await storage.getAvailableTimeSlots(req.user!.id, date);
+      const slots = await storage.getAvailableTimeSlots(parseInt(userId), new Date(date));
       res.json(slots);
     } catch (error) {
       res.status(400).json({ error: "Failed to fetch available slots" });

@@ -26,14 +26,14 @@ export default function Booking() {
   const username = new URLSearchParams(search).get("username");
 
   // Fetch user's biolink
-  const { data: biolink } = useQuery<Biolink>({
-    queryKey: ["/api/public/biolinks", username],
+  const { data: biolink, isLoading: biolinkLoading } = useQuery<Biolink>({
+    queryKey: [`/api/public/biolinks/${username}`],
     enabled: !!username,
   });
 
   // Fetch available time slots when date is selected
   const { data: availableSlots } = useQuery<Array<{ start: Date; end: Date }>>({
-    queryKey: ["/api/available-slots", biolink?.userId, formData.appointmentDate],
+    queryKey: [`/api/available-slots/${biolink?.userId}/${formData.appointmentDate?.toISOString()}`],
     enabled: !!biolink?.userId && !!formData.appointmentDate,
   });
 
@@ -53,7 +53,7 @@ export default function Booking() {
       });
       navigate("/");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to book appointment. Please try again.",
