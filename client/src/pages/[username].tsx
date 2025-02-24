@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Award, BookOpen, Clock, MapPin, Phone } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -58,64 +58,92 @@ export default function PublicBiolinkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
       <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Avatar className="h-24 w-24">
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-6">
+              <Avatar className="h-32 w-32 border-4 border-primary/10">
                 {user.avatarUrl ? (
                   <AvatarImage src={user.avatarUrl} alt={user.name || user.username} />
                 ) : (
                   <AvatarFallback>
-                    <User className="h-12 w-12" />
+                    <User className="h-16 w-16" />
                   </AvatarFallback>
                 )}
               </Avatar>
             </div>
-            <CardTitle className="text-2xl">{biolink.title}</CardTitle>
-            <CardDescription className="mt-2">{biolink.description}</CardDescription>
-            {user.name && (
-              <p className="text-sm text-muted-foreground mt-2">{user.name}</p>
-            )}
+            <CardTitle className="text-3xl mb-2">{user.name}</CardTitle>
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Award className="h-5 w-5" />
+              <span className="font-medium">{biolink.title}</span>
+            </div>
+            <CardDescription className="mt-4 text-lg">
+              {biolink.description}
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
-            {biolink.socialLinks && biolink.socialLinks.length > 0 && (
-              <div className="grid gap-4 mb-8">
-                {biolink.socialLinks.map((link) => {
-                  const platform = SOCIAL_PLATFORMS[link.platform as Platform];
-                  const Icon = platform?.icon;
-
-                  if (!platform) return null;
-
-                  return (
-                    <Button
-                      key={link.id}
-                      variant="outline"
-                      className="w-full"
-                      asChild
-                    >
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 justify-start w-full"
-                      >
-                        {Icon && <Icon className="w-5 h-5" />}
-                        <span>{platform.name}</span>
-                      </a>
-                    </Button>
-                  );
-                })}
+            <div className="grid gap-6">
+              {/* Professional Info */}
+              <div className="grid gap-4 p-4 bg-primary/5 rounded-lg">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <BookOpen className="h-5 w-5" />
+                  <span>Chuyên khoa Nội Tổng quát</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Clock className="h-5 w-5" />
+                  <span>Thời gian làm việc: 8:00 - 17:00</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <MapPin className="h-5 w-5" />
+                  <span>Bệnh viện Đa khoa Trung ương</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Phone className="h-5 w-5" />
+                  <span>Liên hệ khám: 0123.456.789</span>
+                </div>
               </div>
-            )}
 
-            <div className="mt-8">
-              <Button className="w-full" asChild>
-                <Link href={`/booking?username=${username}`}>
-                  Book an Appointment
-                </Link>
-              </Button>
+              {/* Social Links */}
+              {biolink.socialLinks && biolink.socialLinks.length > 0 && (
+                <div className="grid gap-3">
+                  {biolink.socialLinks.map((link) => {
+                    const platform = SOCIAL_PLATFORMS[link.platform as Platform];
+                    const Icon = platform?.icon;
+
+                    if (!platform) return null;
+
+                    return (
+                      <Button
+                        key={link.id}
+                        variant="outline"
+                        className="w-full"
+                        asChild
+                      >
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 justify-start w-full"
+                        >
+                          {Icon && <Icon className="w-5 h-5" />}
+                          <span>{platform.name}</span>
+                        </a>
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Booking Button */}
+              <div className="mt-4">
+                <Button size="lg" className="w-full" asChild>
+                  <Link href={`/booking?username=${username}`}>
+                    Đặt lịch khám
+                  </Link>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

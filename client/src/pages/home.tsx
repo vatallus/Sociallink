@@ -1,83 +1,85 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import ProfileSection from "@/components/profile-section";
 import { motion } from "framer-motion";
+import { Stethoscope, Calendar, UserPlus, Share2 } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/">
-          <a className="text-2xl font-bold">Medical Center</a>
+          <span className="text-2xl font-bold text-primary">MedLink</span>
         </Link>
         <div className="space-x-4">
-          <Link href="/booking">
-            <Button variant="outline">Book Appointment</Button>
-          </Link>
-          <Link href="/admin">
-            <Button variant="outline">Admin Dashboard</Button>
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/auth">Đăng nhập</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/auth">Đăng ký</Link>
+          </Button>
         </div>
       </nav>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="text-center max-w-3xl mx-auto"
         >
-          <ProfileSection />
-
-          <div className="mt-12 text-center">
-            <h2 className="text-3xl font-bold mb-4">Book Your Appointment</h2>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Schedule a consultation with our experienced medical professionals. We provide comprehensive care tailored to your needs.
-            </p>
-            <Link href="/booking">
-              <Button size="lg" className="font-semibold">
-                Schedule Now
-              </Button>
-            </Link>
-          </div>
-
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-lg bg-card">
-              <img
-                src="https://images.unsplash.com/photo-1460925895917-afdab827c52f"
-                alt="Modern Medical Office"
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-              <h3 className="text-xl font-semibold mb-2">State-of-the-art Facility</h3>
-              <p className="text-muted-foreground">
-                Our modern medical center is equipped with the latest technology to provide the best care possible.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-lg bg-card">
-              <img
-                src="https://images.unsplash.com/photo-1487017159836-4e23ece2e4cf"
-                alt="Consultation Room"
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-              <h3 className="text-xl font-semibold mb-2">Expert Consultation</h3>
-              <p className="text-muted-foreground">
-                Get personalized attention from our experienced medical professionals.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-lg bg-card">
-              <img
-                src="https://images.unsplash.com/photo-1431540015161-0bf868a2d407"
-                alt="Treatment Room"
-                className="w-full h-48 object-cover rounded-md mb-4"
-              />
-              <h3 className="text-xl font-semibold mb-2">Advanced Treatment</h3>
-              <p className="text-muted-foreground">
-                Access to advanced medical treatments and procedures for optimal results.
-              </p>
-            </div>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            Nền tảng hồ sơ trực tuyến dành cho
+            <span className="text-primary block mt-2">Bác sĩ chuyên khoa</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8">
+            Tạo trang hồ sơ chuyên nghiệp, chia sẻ thông tin chuyên môn và kết nối với bệnh nhân dễ dàng
+          </p>
+          <Button size="lg" asChild className="font-semibold">
+            <Link href="/auth">Tạo hồ sơ ngay</Link>
+          </Button>
         </motion.div>
+
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="p-6 rounded-lg bg-card text-center">
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Stethoscope className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Hồ sơ chuyên nghiệp</h3>
+            <p className="text-muted-foreground">
+              Tạo trang hồ sơ chuyên nghiệp thể hiện trình độ chuyên môn và kinh nghiệm của bạn
+            </p>
+          </div>
+
+          <div className="p-6 rounded-lg bg-card text-center">
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Đặt lịch thông minh</h3>
+            <p className="text-muted-foreground">
+              Quản lý lịch khám và đặt hẹn trực tuyến một cách hiệu quả
+            </p>
+          </div>
+
+          <div className="p-6 rounded-lg bg-card text-center">
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Kết nối bệnh nhân</h3>
+            <p className="text-muted-foreground">
+              Tạo kênh kết nối trực tiếp với bệnh nhân qua các nền tảng mạng xã hội
+            </p>
+          </div>
+
+          <div className="p-6 rounded-lg bg-card text-center">
+            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Share2 className="w-6 h-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Chia sẻ dễ dàng</h3>
+            <p className="text-muted-foreground">
+              Chia sẻ thông tin và đường dẫn hồ sơ của bạn một cách thuận tiện
+            </p>
+          </div>
+        </div>
       </main>
     </div>
   );

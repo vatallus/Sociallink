@@ -69,14 +69,14 @@ export default function BiolinksDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/biolinks"] });
       setNewBiolink({ title: "", description: "", slug: "" });
       toast({
-        title: "Success",
-        description: "Biolink created successfully.",
+        title: "Thành công",
+        description: "Đã tạo hồ sơ thành công.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create biolink.",
+        title: "Lỗi",
+        description: error.message || "Không thể tạo hồ sơ.",
         variant: "destructive",
       });
     },
@@ -92,14 +92,14 @@ export default function BiolinksDashboard() {
       setIsEditModalOpen(false);
       setEditingBiolink(null);
       toast({
-        title: "Success",
-        description: "Biolink updated successfully.",
+        title: "Thành công",
+        description: "Đã cập nhật hồ sơ thành công.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update biolink.",
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật hồ sơ.",
         variant: "destructive",
       });
     },
@@ -120,14 +120,14 @@ export default function BiolinksDashboard() {
       });
       setNewSocialLink({ platform: "" as Platform, url: "" });
       toast({
-        title: "Success",
-        description: "Social link added successfully.",
+        title: "Thành công",
+        description: "Đã thêm liên kết mạng xã hội.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to add social link.",
+        title: "Lỗi",
+        description: error.message || "Không thể thêm liên kết.",
         variant: "destructive",
       });
     },
@@ -140,14 +140,14 @@ export default function BiolinksDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/biolinks"] });
       toast({
-        title: "Success",
-        description: "Biolink deleted successfully.",
+        title: "Thành công",
+        description: "Đã xóa hồ sơ thành công.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete biolink.",
+        title: "Lỗi",
+        description: error.message || "Không thể xóa hồ sơ.",
         variant: "destructive",
       });
     },
@@ -184,7 +184,7 @@ export default function BiolinksDashboard() {
   };
 
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm("Are you sure you want to delete this biolink?");
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa hồ sơ này không?");
     if (confirmed) {
       await deleteBiolinkMutation.mutateAsync(id);
     }
@@ -199,19 +199,19 @@ export default function BiolinksDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Biolinks Management</h1>
+        <h1 className="text-3xl font-bold">Quản lý Hồ sơ Bác sĩ</h1>
         <div className="flex gap-4">
           <Link href="/admin">
             <Button variant="outline" className="flex items-center gap-2">
-              Appointments
+              Lịch hẹn
             </Button>
           </Link>
           <Link href="/biolinks">
             <Button variant="outline" className="flex items-center gap-2">
               <LinkIcon className="h-4 w-4" />
-              Biolinks
+              Hồ sơ
             </Button>
           </Link>
         </div>
@@ -219,9 +219,9 @@ export default function BiolinksDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Biolink Management</CardTitle>
+          <CardTitle>Quản lý Hồ sơ Y tế</CardTitle>
           <CardDescription>
-            Welcome {user?.username}! Create and manage your biolinks
+            Xin chào {user?.username}! Tạo và quản lý hồ sơ bác sĩ của bạn
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -234,38 +234,38 @@ export default function BiolinksDashboard() {
           >
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">Chức danh</Label>
                 <Input
                   id="title"
                   value={newBiolink.title}
                   onChange={(e) =>
                     setNewBiolink({ ...newBiolink, title: e.target.value })
                   }
-                  placeholder="My Awesome Biolink"
+                  placeholder="Bác sĩ Chuyên khoa II"
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="slug">Slug</Label>
+                <Label htmlFor="slug">Đường dẫn</Label>
                 <Input
                   id="slug"
                   value={newBiolink.slug}
                   onChange={(e) =>
                     setNewBiolink({ ...newBiolink, slug: e.target.value })
                   }
-                  placeholder="my-awesome-biolink"
+                  placeholder="ten-bac-si"
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Mô tả chuyên môn</Label>
                 <Input
                   id="description"
                   value={newBiolink.description}
                   onChange={(e) =>
                     setNewBiolink({ ...newBiolink, description: e.target.value })
                   }
-                  placeholder="A short description of your biolink"
+                  placeholder="Chuyên khoa Nội Tổng quát, 15 năm kinh nghiệm"
                 />
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function BiolinksDashboard() {
               disabled={createBiolinkMutation.isPending}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create Biolink
+              Tạo Hồ sơ Mới
             </Button>
           </form>
 
@@ -309,7 +309,7 @@ export default function BiolinksDashboard() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Slug: {biolink.slug}
+                    Đường dẫn: {biolink.slug}
                   </p>
 
                   <Dialog>
@@ -319,14 +319,14 @@ export default function BiolinksDashboard() {
                         size="sm"
                         onClick={() => setSelectedBiolink(biolink)}
                       >
-                        Manage Social Links
+                        Quản lý Liên kết
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Add Social Links</DialogTitle>
+                        <DialogTitle>Thêm Liên kết Mạng xã hội</DialogTitle>
                         <DialogDescription>
-                          Add and manage social media links for {biolink.title}
+                          Thêm và quản lý các liên kết mạng xã hội cho {biolink.title}
                         </DialogDescription>
                       </DialogHeader>
 
@@ -338,7 +338,7 @@ export default function BiolinksDashboard() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select platform" />
+                            <SelectValue placeholder="Chọn nền tảng" />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(SOCIAL_PLATFORMS).map(([key, platform]) => (
@@ -365,7 +365,7 @@ export default function BiolinksDashboard() {
 
                         {socialLinks && socialLinks.length > 0 && (
                           <div className="mt-4">
-                            <h4 className="mb-2 font-medium">Current Links</h4>
+                            <h4 className="mb-2 font-medium">Liên kết hiện tại</h4>
                             <div className="space-y-2">
                               {socialLinks.map((link) => {
                                 const platform = SOCIAL_PLATFORMS[link.platform as Platform];
@@ -397,7 +397,7 @@ export default function BiolinksDashboard() {
                           onClick={handleAddSocialLink}
                           disabled={!isUrlValid || createSocialLinkMutation.isPending}
                         >
-                          Add Social Link
+                          Thêm Liên kết
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -413,15 +413,15 @@ export default function BiolinksDashboard() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Biolink</DialogTitle>
+            <DialogTitle>Chỉnh sửa Hồ sơ</DialogTitle>
             <DialogDescription>
-              Update your biolink information
+              Cập nhật thông tin hồ sơ bác sĩ
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateBiolink}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-title">Title</Label>
+                <Label htmlFor="edit-title">Chức danh</Label>
                 <Input
                   id="edit-title"
                   name="title"
@@ -430,7 +430,7 @@ export default function BiolinksDashboard() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-slug">Slug</Label>
+                <Label htmlFor="edit-slug">Đường dẫn</Label>
                 <Input
                   id="edit-slug"
                   name="slug"
@@ -439,7 +439,7 @@ export default function BiolinksDashboard() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
+                <Label htmlFor="edit-description">Mô tả chuyên môn</Label>
                 <Input
                   id="edit-description"
                   name="description"
@@ -453,7 +453,7 @@ export default function BiolinksDashboard() {
                 variant="secondary"
                 onClick={() => setIsEditModalOpen(false)}
               >
-                Cancel
+                Hủy
               </Button>
               <Button
                 type="submit"
@@ -462,7 +462,7 @@ export default function BiolinksDashboard() {
                 {updateBiolinkMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Save Changes'
+                  'Lưu thay đổi'
                 )}
               </Button>
             </DialogFooter>
