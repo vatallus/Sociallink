@@ -5,13 +5,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
   address: text("address"),
   avatarUrl: text("avatar_url"),
-  specialty: text("specialty"),        // Thêm chuyên khoa
-  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
-  workingHours: text("working_hours"), // Thêm giờ làm việc
+  specialty: text("specialty"),
+  clinicAddress: text("clinic_address"),
+  workingHours: text("working_hours"),
 });
 
 export const biolinks = pgTable("biolinks", {
@@ -21,9 +22,9 @@ export const biolinks = pgTable("biolinks", {
   description: text("description"),
   slug: text("slug").notNull().unique(),
   theme: text("theme").default("default"),
-  specialty: text("specialty"),        // Thêm chuyên khoa
-  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
-  workingHours: text("working_hours"), // Thêm giờ làm việc
+  specialty: text("specialty"),        
+  clinicAddress: text("clinic_address"), 
+  workingHours: text("working_hours"), 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -45,9 +46,9 @@ export const appointments = pgTable("appointments", {
   duration: integer("duration").notNull().default(30),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
-  biolinkId: serial("biolink_id").references(() => biolinks.id), // Thêm reference đến biolink
-  specialty: text("specialty"),        // Thêm chuyên khoa
-  clinicAddress: text("clinic_address"), // Thêm địa chỉ phòng khám
+  biolinkId: serial("biolink_id").references(() => biolinks.id), 
+  specialty: text("specialty"),        
+  clinicAddress: text("clinic_address"), 
 });
 
 export const availabilitySettings = pgTable("availability_settings", {
@@ -63,8 +64,11 @@ export const availabilitySettings = pgTable("availability_settings", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   password: true,
 }).extend({
+  email: z.string().email("Email không hợp lệ"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
   name: z.string().optional(),
   address: z.string().optional(),
   avatarUrl: z.string().optional(),
@@ -102,7 +106,7 @@ export const bookingFormSchema = z.object({
   appointmentDate: z.date(),
   duration: z.number().min(15).max(180),
   notes: z.string().optional(),
-  biolinkId: z.number().optional(), //add biolinkId
+  biolinkId: z.number().optional(), 
   specialty: z.string().optional(),
   clinicAddress: z.string().optional(),
 });

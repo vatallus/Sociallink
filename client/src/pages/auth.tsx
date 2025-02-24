@@ -30,7 +30,9 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
 
   const loginForm = useForm({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(
+      insertUserSchema.pick({ username: true, password: true })
+    ),
     defaultValues: {
       username: "",
       password: "",
@@ -41,6 +43,7 @@ export default function AuthPage() {
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
     },
   });
@@ -128,7 +131,20 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Tên đăng nhập</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="Nhập tên đăng nhập" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} placeholder="Nhập địa chỉ email" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -141,7 +157,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Mật khẩu</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input 
+                              type="password" 
+                              {...field} 
+                              placeholder="Tối thiểu 6 ký tự"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
