@@ -29,15 +29,29 @@ export function BookingSteps({
 }: BookingStepsProps) {
   const form = useForm<InsertAppointment>({
     resolver: zodResolver(bookingFormSchema),
-    defaultValues: formData,
+    defaultValues: {
+      ...formData,
+      appointmentDate: formData.appointmentDate ? new Date(formData.appointmentDate) : undefined,
+    },
   });
+
+  const handleSubmit = (data: Partial<InsertAppointment>) => {
+    if (step === 1 && !data.appointmentDate) {
+      form.setError("appointmentDate", {
+        type: "manual",
+        message: "Please select a date",
+      });
+      return;
+    }
+    onSubmit(data);
+  };
 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="appointmentDate"
@@ -63,7 +77,7 @@ export function BookingSteps({
       case 2:
         return (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -71,7 +85,7 @@ export function BookingSteps({
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="Enter your full name" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -84,7 +98,7 @@ export function BookingSteps({
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input {...field} type="tel" />
+                      <Input {...field} type="tel" placeholder="Enter your phone number" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -105,7 +119,7 @@ export function BookingSteps({
                   <label className="font-medium">Date</label>
                   <p>
                     {formData.appointmentDate
-                      ? format(formData.appointmentDate, "PPP")
+                      ? format(new Date(formData.appointmentDate), "PPP")
                       : "Not selected"}
                   </p>
                 </div>
@@ -119,7 +133,7 @@ export function BookingSteps({
                 </div>
               </div>
             </div>
-            <Button onClick={() => onSubmit(formData)}>Continue</Button>
+            <Button onClick={() => handleSubmit(formData)}>Continue</Button>
           </div>
         );
 
@@ -132,7 +146,7 @@ export function BookingSteps({
               schedule your appointment.
             </p>
             <Button
-              onClick={() => onSubmit(formData)}
+              onClick={() => handleSubmit(formData)}
               disabled={isLoading}
               className="w-full"
             >
