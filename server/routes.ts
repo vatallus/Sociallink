@@ -95,7 +95,7 @@ export async function registerRoutes(app: Express) {
     next();
   };
 
-  // Apply authentication middleware to all protected routes
+  // Apply authentication middleware to protected routes
   app.use('/api/biolinks', requireAuth);
   app.use('/api/social-links', requireAuth);
   app.use('/api/appointments', requireAuth);

@@ -80,27 +80,29 @@ export default function PublicBiolinkPage() {
             )}
           </CardHeader>
           <CardContent>
-            {/* Social Links */}
             {biolink.socialLinks && biolink.socialLinks.length > 0 && (
               <div className="grid gap-4 mb-8">
                 {biolink.socialLinks.map((link) => {
                   const platform = SOCIAL_PLATFORMS[link.platform as Platform];
                   const Icon = platform?.icon;
 
+                  if (!platform) return null;
+
                   return (
                     <Button
                       key={link.id}
                       variant="outline"
-                      className="w-full flex items-center gap-3 justify-start"
+                      className="w-full"
                       asChild
                     >
                       <a
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="flex items-center gap-3 justify-start w-full"
                       >
                         {Icon && <Icon className="w-5 h-5" />}
-                        <span>{platform?.name || link.platform}</span>
+                        <span>{platform.name}</span>
                       </a>
                     </Button>
                   );
@@ -108,7 +110,6 @@ export default function PublicBiolinkPage() {
               </div>
             )}
 
-            {/* Booking Button */}
             <div className="mt-8">
               <Button className="w-full" asChild>
                 <Link href={`/booking?username=${username}`}>
