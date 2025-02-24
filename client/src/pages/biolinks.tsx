@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Link as LinkIcon } from "lucide-react";
+import { Loader2, Link as LinkIcon, Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -33,7 +33,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SocialLinkValidator, SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-validator";
 import type { Biolink, SocialLink } from "@shared/schema";
 import { Link } from "wouter";
-
 
 export default function BiolinksDashboard() {
   const { toast } = useToast();
