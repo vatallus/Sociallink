@@ -6,6 +6,20 @@ import { motion } from "framer-motion";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <Link href="/">
+          <a className="text-2xl font-bold">Medical Center</a>
+        </Link>
+        <div className="space-x-4">
+          <Link href="/booking">
+            <Button variant="outline">Book Appointment</Button>
+          </Link>
+          <Link href="/admin">
+            <Button variant="outline">Admin Dashboard</Button>
+          </Link>
+        </div>
+      </nav>
+
       <main className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -13,7 +27,7 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           <ProfileSection />
-          
+
           <div className="mt-12 text-center">
             <h2 className="text-3xl font-bold mb-4">Book Your Appointment</h2>
             <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
