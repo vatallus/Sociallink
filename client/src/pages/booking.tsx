@@ -9,17 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BookingSteps } from "@/components/booking/steps";
-import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment } from "@shared/schema";
+import { StepContent } from "@/components/booking/steps";
 
 export default function Booking() {
   const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState<Partial<InsertAppointment>>({});
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<InsertAppointment>>({});
 
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
@@ -28,8 +28,8 @@ export default function Booking() {
     },
     onSuccess: () => {
       toast({
-        title: "Appointment Booked",
-        description: "Your appointment has been successfully scheduled.",
+        title: "Success!",
+        description: "Your appointment has been booked successfully.",
       });
       navigate("/");
     },
@@ -42,20 +42,14 @@ export default function Booking() {
     },
   });
 
-  const handleSubmit = (data: Partial<InsertAppointment>) => {
-    const newFormData = { ...formData, ...data };
-    setFormData(newFormData);
+  const handleFormSubmit = (data: Partial<InsertAppointment>) => {
+    const newData = { ...formData, ...data };
+    setFormData(newData);
 
     if (step < 4) {
       setStep(step + 1);
-    } else if (step === 4) {
-      bookingMutation.mutate(newFormData as InsertAppointment);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (step > 1) {
-      setStep(step - 1);
+    } else {
+      bookingMutation.mutate(newData as InsertAppointment);
     }
   };
 
@@ -75,6 +69,7 @@ export default function Booking() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Progress Bar */}
             <div className="mb-8">
               <div className="flex justify-between mb-2">
                 {[1, 2, 3, 4].map((num) => (
@@ -86,30 +81,50 @@ export default function Booking() {
                   />
                 ))}
               </div>
+              <div className="flex justify-between px-1">
+                <span className="text-sm">Select Date</span>
+                <span className="text-sm">Your Info</span>
+                <span className="text-sm">Review</span>
+                <span className="text-sm">Confirm</span>
+              </div>
             </div>
 
-            <BookingSteps
-              step={step}
-              formData={formData}
-              onSubmit={handleSubmit}
-              isLoading={bookingMutation.isPending}
-            />
+            {/* Form Steps */}
+            <div className="mt-6">
+              <StepContent
+                step={step}
+                formData={formData}
+                onSubmit={handleFormSubmit}
+                isLoading={bookingMutation.isPending}
+              />
 
-            <div className="flex justify-between mt-6">
-              {step > 1 && (
-                <Button
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={bookingMutation.isPending}
-                >
-                  Previous
-                </Button>
-              )}
-              {step === 1 && (
-                <Button variant="outline" onClick={() => navigate("/")}>
-                  Cancel
-                </Button>
-              )}
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-6">
+                {step > 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(step - 1)}
+                    disabled={bookingMutation.isPending}
+                  >
+                    Back
+                  </Button>
+                )}
+                {step === 1 && (
+                  <Button variant="outline" onClick={() => navigate("/")}>
+                    Cancel
+                  </Button>
+                )}
+                {step < 4 && (
+                  <Button onClick={handleFormSubmit} disabled={bookingMutation.isPending}>
+                    Continue
+                  </Button>
+                )}
+                {step === 4 && (
+                  <Button type="submit" onClick={() => handleFormSubmit(formData)} disabled={bookingMutation.isPending}>
+                    Book Appointment
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
