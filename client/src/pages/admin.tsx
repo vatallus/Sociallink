@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, Link as LinkIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Link } from "wouter";
 import type { Appointment } from "@shared/schema";
 
 export default function AdminDashboard() {
@@ -79,6 +80,24 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-8">
+      {/* Navigation Bar */}
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <div className="flex gap-4">
+          <Link href="/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              Appointments
+            </Button>
+          </Link>
+          <Link href="/biolinks">
+            <Button variant="outline" className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              Biolinks
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Appointment Management</CardTitle>
