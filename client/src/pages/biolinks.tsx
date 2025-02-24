@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Link as LinkIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -32,6 +32,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SocialLinkValidator, SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-validator";
 import type { Biolink, SocialLink } from "@shared/schema";
+import { Link } from "wouter";
+
 
 export default function BiolinksDashboard() {
   const { toast } = useToast();
@@ -125,6 +127,24 @@ export default function BiolinksDashboard() {
 
   return (
     <div className="min-h-screen bg-background p-8">
+      {/* Navigation Bar */}
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Biolinks Management</h1>
+        <div className="flex gap-4">
+          <Link href="/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              Appointments
+            </Button>
+          </Link>
+          <Link href="/biolinks">
+            <Button variant="outline" className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              Biolinks
+            </Button>
+          </Link>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Biolink Management</CardTitle>
