@@ -11,22 +11,50 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Biolink } from "@shared/schema";
+import { SocialLinkValidator, SOCIAL_PLATFORMS, type Platform } from "@/components/social-link-validator";
+import type { Biolink, SocialLink } from "@shared/schema";
 
 export default function BiolinksDashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [selectedBiolink, setSelectedBiolink] = useState<Biolink | null>(null);
   const [newBiolink, setNewBiolink] = useState({
     title: "",
     description: "",
     slug: "",
   });
+  const [newSocialLink, setNewSocialLink] = useState({
+    platform: "" as Platform,
+    url: "",
+  });
+  const [isUrlValid, setIsUrlValid] = useState(false);
 
   const { data: biolinks, isLoading } = useQuery<Biolink[]>({
     queryKey: ["/api/biolinks"],
+  });
+
+  const { data: socialLinks } = useQuery<SocialLink[]>({
+    queryKey: ["/api/biolinks", selectedBiolink?.id, "social-links"],
+    enabled: !!selectedBiolink,
   });
 
   const createBiolinkMutation = useMutation({
@@ -51,9 +79,40 @@ export default function BiolinksDashboard() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createBiolinkMutation.mutate(newBiolink);
+  const createSocialLinkMutation = useMutation({
+    mutationFn: async (data: typeof newSocialLink & { biolinkId: number }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/biolinks/${data.biolinkId}/social-links`,
+        data
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/biolinks", selectedBiolink?.id, "social-links"],
+      });
+      setNewSocialLink({ platform: "" as Platform, url: "" });
+      toast({
+        title: "Success",
+        description: "Social link added successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add social link.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddSocialLink = () => {
+    if (!selectedBiolink || !isUrlValid) return;
+    createSocialLinkMutation.mutate({
+      ...newSocialLink,
+      biolinkId: selectedBiolink.id,
+    });
   };
 
   if (isLoading) {
@@ -74,7 +133,13 @@ export default function BiolinksDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createBiolinkMutation.mutate(newBiolink);
+            }}
+            className="space-y-4 mb-8"
+          >
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="title">Title</Label>
@@ -130,19 +195,100 @@ export default function BiolinksDashboard() {
                   <CardDescription>{biolink.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Slug: {biolink.slug}
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => {
-                      // TODO: Implement edit functionality
-                    }}
-                  >
-                    Manage Social Links
-                  </Button>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedBiolink(biolink)}
+                      >
+                        Manage Social Links
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Social Links</DialogTitle>
+                        <DialogDescription>
+                          Add and manage social media links for {biolink.title}
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="grid gap-4 py-4">
+                        <Select
+                          value={newSocialLink.platform}
+                          onValueChange={(value: Platform) =>
+                            setNewSocialLink({ ...newSocialLink, platform: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select platform" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(SOCIAL_PLATFORMS).map(([key, platform]) => (
+                              <SelectItem key={key} value={key}>
+                                <div className="flex items-center gap-2">
+                                  <platform.icon className="w-4 h-4" />
+                                  {platform.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {newSocialLink.platform && (
+                          <SocialLinkValidator
+                            platform={newSocialLink.platform}
+                            url={newSocialLink.url}
+                            onChange={(url) =>
+                              setNewSocialLink({ ...newSocialLink, url })
+                            }
+                            onValidChange={setIsUrlValid}
+                          />
+                        )}
+
+                        {socialLinks && socialLinks.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="mb-2 font-medium">Current Links</h4>
+                            <div className="space-y-2">
+                              {socialLinks.map((link) => {
+                                const platform = SOCIAL_PLATFORMS[link.platform as Platform];
+                                const Icon = platform?.icon;
+                                return (
+                                  <div
+                                    key={link.id}
+                                    className="flex items-center gap-2 p-2 rounded-md border"
+                                  >
+                                    {Icon && <Icon className="w-4 h-4" />}
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-blue-500 hover:underline"
+                                    >
+                                      {link.url}
+                                    </a>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          onClick={handleAddSocialLink}
+                          disabled={!isUrlValid || createSocialLinkMutation.isPending}
+                        >
+                          Add Social Link
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
             ))}
