@@ -44,6 +44,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Link } from "wouter";
 import type { Appointment } from "@shared/schema";
 
+const STATUS_LABELS = {
+  pending: "Chờ xác nhận",
+  confirmed: "Đã xác nhận",
+  cancelled: "Đã hủy"
+};
+
 export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -64,15 +70,15 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Success",
-        description: "Profile updated successfully.",
+        title: "Thành công",
+        description: "Đã cập nhật thông tin cá nhân.",
       });
       setIsProfileOpen(false);
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update profile.",
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật thông tin.",
         variant: "destructive",
       });
     },
@@ -87,20 +93,20 @@ export default function AdminDashboard() {
         body: formData,
         credentials: 'include',
       });
-      if (!res.ok) throw new Error('Failed to upload avatar');
+      if (!res.ok) throw new Error('Không thể tải lên ảnh đại diện');
       return res.json();
     },
     onSuccess: (data) => {
       updateProfileMutation.mutate({ avatarUrl: data.url });
       toast({
-        title: "Success",
-        description: "Avatar uploaded successfully.",
+        title: "Thành công",
+        description: "Đã tải lên ảnh đại diện.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to upload avatar.",
+        title: "Lỗi",
+        description: error.message || "Không thể tải lên ảnh đại diện.",
         variant: "destructive",
       });
     },
@@ -112,8 +118,8 @@ export default function AdminDashboard() {
 
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Error",
-        description: "Please upload an image file.",
+        title: "Lỗi",
+        description: "Vui lòng chọn file ảnh.",
         variant: "destructive",
       });
       return;
@@ -121,8 +127,8 @@ export default function AdminDashboard() {
 
     if (file.size > 5 * 1024 * 1024) { 
       toast({
-        title: "Error",
-        description: "File size should be less than 5MB.",
+        title: "Lỗi",
+        description: "Kích thước file không được vượt quá 5MB.",
         variant: "destructive",
       });
       return;
@@ -144,14 +150,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       toast({
-        title: "Success",
-        description: "Appointment status updated successfully.",
+        title: "Thành công",
+        description: "Đã cập nhật trạng thái lịch hẹn.",
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update appointment status.",
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật trạng thái.",
         variant: "destructive",
       });
     },
@@ -174,9 +180,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-8">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold">Trang Quản lý</h1>
         <div className="flex items-center gap-4">
           <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <DialogTrigger asChild>
@@ -195,9 +201,9 @@ export default function AdminDashboard() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogTitle>Chỉnh sửa Thông tin</DialogTitle>
                 <DialogDescription>
-                  Update your profile information
+                  Cập nhật thông tin cá nhân của bạn
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -213,7 +219,7 @@ export default function AdminDashboard() {
                   </Avatar>
                 </div>
                 <div className="grid gap-2">
-                  <Label>Avatar</Label>
+                  <Label>Ảnh đại diện</Label>
                   <div className="flex gap-2">
                     <Input
                       type="file"
@@ -231,19 +237,19 @@ export default function AdminDashboard() {
                       {uploadingAvatar ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
+                          Đang tải lên...
                         </>
                       ) : (
                         <>
                           <Upload className="mr-2 h-4 w-4" />
-                          Upload Avatar
+                          Tải lên ảnh đại diện
                         </>
                       )}
                     </Button>
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Họ tên</Label>
                   <Input
                     id="name"
                     defaultValue={user?.name || ""}
@@ -253,7 +259,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">Địa chỉ</Label>
                   <Input
                     id="address"
                     defaultValue={user?.address || ""}
@@ -268,20 +274,20 @@ export default function AdminDashboard() {
                   onClick={() => setIsProfileOpen(false)}
                   variant="outline"
                 >
-                  Close
+                  Đóng
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
           <Link href="/admin">
             <Button variant="outline" className="flex items-center gap-2">
-              Appointments
+              Lịch hẹn
             </Button>
           </Link>
           <Link href="/biolinks">
             <Button variant="outline" className="flex items-center gap-2">
               <LinkIcon className="h-4 w-4" />
-              Biolinks
+              Hồ sơ
             </Button>
           </Link>
         </div>
@@ -289,9 +295,9 @@ export default function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Appointment Management</CardTitle>
+          <CardTitle>Quản lý Lịch hẹn</CardTitle>
           <CardDescription>
-            Welcome {user?.username}! View and manage all appointments
+            Xin chào {user?.username}! Xem và quản lý lịch hẹn khám bệnh
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -301,13 +307,13 @@ export default function AdminDashboard() {
               onValueChange={setStatusFilter}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Lọc theo trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -315,18 +321,18 @@ export default function AdminDashboard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Patient Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Thời gian</TableHead>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Số điện thoại</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAppointments?.map((appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell>
-                    {format(new Date(appointment.appointmentDate), "PPP p")}
+                    {format(new Date(appointment.appointmentDate), "dd/MM/yyyy HH:mm")}
                   </TableCell>
                   <TableCell>{appointment.fullName}</TableCell>
                   <TableCell>{appointment.phoneNumber}</TableCell>
@@ -340,7 +346,7 @@ export default function AdminDashboard() {
                           : "outline"
                       }
                     >
-                      {appointment.status}
+                      {STATUS_LABELS[appointment.status as keyof typeof STATUS_LABELS]}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -352,7 +358,7 @@ export default function AdminDashboard() {
                             onClick={() => handleStatusUpdate(appointment.id, "confirmed")}
                             disabled={updateStatusMutation.isPending}
                           >
-                            Confirm
+                            Xác nhận
                           </Button>
                           <Button
                             size="sm"
@@ -360,7 +366,7 @@ export default function AdminDashboard() {
                             onClick={() => handleStatusUpdate(appointment.id, "cancelled")}
                             disabled={updateStatusMutation.isPending}
                           >
-                            Cancel
+                            Hủy
                           </Button>
                         </>
                       )}

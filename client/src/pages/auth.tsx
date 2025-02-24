@@ -28,7 +28,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const { loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
-  
+
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
@@ -66,18 +66,18 @@ export default function AuthPage() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Welcome</CardTitle>
+            <CardTitle>Chào mừng</CardTitle>
             <CardDescription>
-              Login or create an account to manage your appointments
+              Đăng nhập hoặc tạo tài khoản để quản lý lịch hẹn khám bệnh
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">Đăng nhập</TabsTrigger>
+                <TabsTrigger value="register">Đăng ký</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="login">
                 <Form {...loginForm}>
                   <form onSubmit={onLogin} className="space-y-4">
@@ -86,7 +86,7 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Tên đăng nhập</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -99,7 +99,7 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Mật khẩu</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -112,12 +112,12 @@ export default function AuthPage() {
                       className="w-full"
                       disabled={loginMutation.isPending}
                     >
-                      {loginMutation.isPending ? "Logging in..." : "Login"}
+                      {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
                     </Button>
                   </form>
                 </Form>
               </TabsContent>
-              
+
               <TabsContent value="register">
                 <Form {...registerForm}>
                   <form onSubmit={onRegister} className="space-y-4">
@@ -126,7 +126,7 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Tên đăng nhập</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -139,7 +139,7 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Mật khẩu</FormLabel>
                           <FormControl>
                             <Input type="password" {...field} />
                           </FormControl>
@@ -152,7 +152,7 @@ export default function AuthPage() {
                       className="w-full"
                       disabled={registerMutation.isPending}
                     >
-                      {registerMutation.isPending ? "Creating account..." : "Register"}
+                      {registerMutation.isPending ? "Đang tạo tài khoản..." : "Đăng ký"}
                     </Button>
                   </form>
                 </Form>
