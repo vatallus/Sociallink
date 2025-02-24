@@ -190,6 +190,38 @@ export default function BiolinksDashboard() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic slug validation
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!slugRegex.test(newBiolink.slug)) {
+      toast({
+        title: "Lỗi",
+        description: "Đường dẫn chỉ được chứa chữ thường, số và dấu gạch ngang",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check for existing biolink with same slug
+    try {
+      const response = await fetch(`/api/public/biolinks/by-slug/${newBiolink.slug}`);
+      if (response.ok) {
+        toast({
+          title: "Lỗi",
+          description: "Đường dẫn này đã được sử dụng, vui lòng chọn đường dẫn khác",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      // If we get a 404, that means the slug is available
+      createBiolinkMutation.mutate(newBiolink);
+    }
+  };
+
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -226,10 +258,7 @@ export default function BiolinksDashboard() {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              createBiolinkMutation.mutate(newBiolink);
-            }}
+            onSubmit={handleSubmit}
             className="space-y-4 mb-8"
           >
             <div className="grid gap-4">
@@ -309,8 +338,32 @@ export default function BiolinksDashboard() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Đường dẫn: {biolink.slug}
+                    Đường dẫn công khai: {window.location.origin}/bio/{biolink.slug}
                   </p>
+
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/bio/${biolink.slug}`);
+                        toast({
+                          title: "Thành công",
+                          description: "Đã sao chép đường dẫn.",
+                        });
+                      }}
+                    >
+                      Sao chép đường dẫn
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/bio/${biolink.slug}`, '_blank')}
+                    >
+                      Xem trước
+                    </Button>
+                  </div>
 
                   <Dialog>
                     <DialogTrigger asChild>

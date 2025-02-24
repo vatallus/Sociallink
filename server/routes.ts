@@ -87,6 +87,35 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Add this new endpoint for fetching biolink by slug
+  app.get("/api/public/biolinks/by-slug/:slug", async (req, res) => {
+    try {
+      const biolink = await storage.getBiolinkBySlug(req.params.slug);
+      if (!biolink) {
+        return res.status(404).json({ error: "Biolink not found" });
+      }
+
+      // Fetch related data
+      const user = await storage.getUser(biolink.userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const socialLinks = await storage.getSocialLinksByBiolinkId(biolink.id);
+      const { password, ...publicUserInfo } = user;
+
+      // Return combined data
+      res.json({
+        ...biolink,
+        socialLinks,
+        user: publicUserInfo
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch biolink" });
+    }
+  });
+
+
   // Authentication middleware for protected routes
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
