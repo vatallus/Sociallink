@@ -122,6 +122,7 @@ export async function registerRoutes(app: Express) {
       // Return the first biolink (assuming one biolink per user for now)
       res.json(biolinks[0]);
     } catch (error) {
+      console.error("Error fetching biolink:", error);
       res.status(500).json({ error: "Failed to fetch biolink" });
     }
   });
@@ -131,39 +132,43 @@ export async function registerRoutes(app: Express) {
       const socialLinks = await storage.getSocialLinksByBiolinkId(parseInt(req.params.id));
       res.json(socialLinks);
     } catch (error) {
+      console.error("Error fetching social links:", error);
       res.status(500).json({ error: "Failed to fetch social links" });
     }
   });
 
-  // Updated and new appointment routes
-  app.post("/api/appointments", requireAuth, async (req, res) => {
+  // Public booking endpoints
+  app.post("/api/appointments", async (req, res) => {
     try {
-      const appointmentData = insertAppointmentSchema.parse(req.body);
+      const appointmentData = insertAppointmentSchema.parse({
+        ...req.body,
+        status: "pending", // Always set initial status as pending
+      });
       const appointment = await storage.createAppointment(appointmentData);
       res.json(appointment);
     } catch (error) {
+      console.error("Error creating appointment:", error);
       res.status(400).json({ error: "Invalid appointment data" });
     }
   });
 
-  app.get("/api/appointments", requireAuth, async (req, res) => {
-    const date = req.query.date ? new Date(req.query.date as string) : undefined;
-    const appointments = date
-      ? await storage.getAppointmentsByDate(date)
-      : await storage.getAppointments();
-    res.json(appointments);
-  });
-
-  app.patch("/api/appointments/:id/status", requireAuth, async (req, res) => {
+  app.get("/api/available-slots/:userId/:date", async (req, res) => {
     try {
-      const { id } = req.params;
-      const { status } = updateStatusSchema.parse(req.body);
-      const appointment = await storage.updateAppointmentStatus(parseInt(id), status);
-      res.json(appointment);
+      const { userId, date } = req.params;
+      if (!date || isNaN(new Date(date).getTime())) {
+        return res.status(400).json({ error: "Invalid date" });
+      }
+
+      console.log(`Fetching slots for user ${userId} on date ${date}`);
+      const slots = await storage.getAvailableTimeSlots(parseInt(userId), new Date(date));
+      console.log(`Found ${slots.length} available slots`);
+      res.json(slots);
     } catch (error) {
-      res.status(400).json({ error: "Invalid status update request" });
+      console.error("Error fetching available slots:", error);
+      res.status(400).json({ error: "Failed to fetch available slots" });
     }
   });
+
 
   // New availability routes
   app.post("/api/availability", requireAuth, async (req, res) => {
@@ -191,21 +196,6 @@ export async function registerRoutes(app: Express) {
       res.json(setting);
     } catch (error) {
       res.status(400).json({ error: "Invalid availability update request" });
-    }
-  });
-
-  // Update the available slots route
-  app.get("/api/available-slots/:userId/:date", async (req, res) => {
-    try {
-      const { userId, date } = req.params;
-      if (!date || isNaN(new Date(date).getTime())) {
-        return res.status(400).json({ error: "Invalid date" });
-      }
-
-      const slots = await storage.getAvailableTimeSlots(parseInt(userId), new Date(date));
-      res.json(slots);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to fetch available slots" });
     }
   });
 

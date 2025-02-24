@@ -9,11 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, queryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment, Biolink } from "@shared/schema";
 import { StepContent } from "@/components/booking/steps";
+import { Loader2 } from "lucide-react";
 
 export default function Booking() {
   const [step, setStep] = useState(1);
@@ -39,9 +40,11 @@ export default function Booking() {
 
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
+      console.log('Submitting appointment data:', data);
       const formattedData = {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
+        duration: data.duration || 30, // Ensure duration is set
       };
       const res = await apiRequest("POST", "/api/appointments", formattedData);
       return res.json();
@@ -51,9 +54,11 @@ export default function Booking() {
         title: "Success!",
         description: "Your appointment has been booked successfully.",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       navigate("/");
     },
     onError: (error: Error) => {
+      console.error('Booking error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to book appointment. Please try again.",
@@ -68,10 +73,33 @@ export default function Booking() {
 
     if (step < 4) {
       setStep(step + 1);
-    } else if (step === 4 && newData.appointmentDate && newData.fullName && newData.phoneNumber) {
-      bookingMutation.mutate(newData as InsertAppointment);
+    } else if (step === 4) {
+      // Validate required fields
+      if (!newData.appointmentDate || !newData.fullName || !newData.phoneNumber) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Submit the appointment
+      const completeData = {
+        ...newData,
+        duration: newData.duration || 30,
+      };
+      bookingMutation.mutate(completeData as InsertAppointment);
     }
   };
+
+  if (biolinkLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!username || !biolink) {
     return (
@@ -128,7 +156,11 @@ export default function Booking() {
                 formData={formData}
                 onSubmit={handleFormSubmit}
                 isLoading={bookingMutation.isPending}
-                availableSlots={availableSlots}
+                availableSlots={availableSlots?.map(slot => ({
+                  ...slot,
+                  start: new Date(slot.start),
+                  end: new Date(slot.end)
+                }))}
               />
 
               {/* Navigation Buttons */}
@@ -147,7 +179,7 @@ export default function Booking() {
                     Cancel
                   </Button>
                 )}
-                <Button 
+                <Button
                   onClick={() => {
                     const currentForm = document.querySelector(
                       step === 1 ? '#dateForm' : '#infoForm'
@@ -161,7 +193,7 @@ export default function Booking() {
                   disabled={bookingMutation.isPending}
                   className="ml-auto"
                 >
-                  {step === 4 
+                  {step === 4
                     ? (bookingMutation.isPending ? "Booking..." : "Confirm Booking")
                     : "Continue"}
                 </Button>
