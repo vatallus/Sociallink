@@ -14,11 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment, Biolink } from "@shared/schema";
 import { StepContent } from "@/components/booking/steps";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 
 export default function Booking() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<InsertAppointment>>({});
+  const [isSuccess, setIsSuccess] = useState(false);
   const [, navigate] = useLocation();
   const search = useSearch();
   const { toast } = useToast();
@@ -46,7 +47,7 @@ export default function Booking() {
         title: "Success!",
         description: "Your appointment has been booked successfully.",
       });
-      navigate("/");
+      setIsSuccess(true);
     },
     onError: (error: Error) => {
       console.error('Booking error:', error);
@@ -96,6 +97,39 @@ export default function Booking() {
           The requested profile could not be found.
         </p>
         <Button onClick={() => navigate("/")}>Return Home</Button>
+      </div>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-background py-8 px-4">
+        <div className="container mx-auto max-w-3xl">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+                <h2 className="text-2xl font-bold">Booking Confirmed!</h2>
+                <p className="text-muted-foreground max-w-md">
+                  Your appointment with {biolink.title} has been successfully booked. 
+                  You will receive a confirmation shortly.
+                </p>
+                <div className="flex gap-4 mt-6">
+                  <Button variant="outline" onClick={() => {
+                    setStep(1);
+                    setFormData({});
+                    setIsSuccess(false);
+                  }}>
+                    Book Another
+                  </Button>
+                  <Button onClick={() => navigate(`/${username}`)}>
+                    Return to Profile
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -157,7 +191,7 @@ export default function Booking() {
                   </Button>
                 )}
                 {step === 1 && (
-                  <Button variant="outline" onClick={() => navigate("/")}>
+                  <Button variant="outline" onClick={() => navigate(`/${username}`)}>
                     Cancel
                   </Button>
                 )}
