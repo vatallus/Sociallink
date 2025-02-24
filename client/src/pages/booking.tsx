@@ -53,6 +53,12 @@ export default function Booking() {
     }
   };
 
+  const handlePrevious = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <motion.div
@@ -93,7 +99,7 @@ export default function Booking() {
               {step > 1 && (
                 <Button
                   variant="outline"
-                  onClick={() => setStep(step - 1)}
+                  onClick={handlePrevious}
                   disabled={bookingMutation.isPending}
                 >
                   Previous
