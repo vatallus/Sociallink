@@ -62,8 +62,8 @@ export default function AdminDashboard() {
     (apt) => statusFilter === "all" || apt.status === statusFilter
   );
 
-  const handleStatusUpdate = (id: number, newStatus: string) => {
-    updateStatusMutation.mutate({ id, newStatus });
+  const handleStatusUpdate = (id: number, status: string) => {
+    updateStatusMutation.mutate({ id, status });
   };
 
   return (
