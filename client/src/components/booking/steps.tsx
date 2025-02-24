@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -46,7 +47,7 @@ export function StepContent({
                 <Calendar
                   mode="single"
                   selected={field.value}
-                  onSelect={field.onChange}
+                  onSelect={(date) => field.onChange(date)}
                   disabled={(date) => date < new Date()}
                   className="rounded-md border"
                 />

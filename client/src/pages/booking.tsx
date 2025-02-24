@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { InsertAppointment, Biolink } from "@shared/schema";
 import { StepContent } from "@/components/booking/steps";
+import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle } from "lucide-react";
 
 export default function Booking() {
@@ -35,11 +34,10 @@ export default function Booking() {
 
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
-      const formattedData = {
+      const res = await apiRequest("POST", "/api/appointments", {
         ...data,
         appointmentDate: new Date(data.appointmentDate).toISOString(),
-      };
-      const res = await apiRequest("POST", "/api/appointments", formattedData);
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -50,7 +48,6 @@ export default function Booking() {
       setIsSuccess(true);
     },
     onError: (error: Error) => {
-      console.error('Booking error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to book appointment. Please try again.",
@@ -63,10 +60,11 @@ export default function Booking() {
     const newData = { ...formData, ...data };
     setFormData(newData);
 
+    // For steps 1-3, just move to next step
     if (step < 4) {
       setStep(step + 1);
     } else if (step === 4) {
-      // Validate required fields
+      // Validate required fields before submission
       if (!newData.appointmentDate || !newData.fullName || !newData.phoneNumber) {
         toast({
           title: "Error",
@@ -136,12 +134,7 @@ export default function Booking() {
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto max-w-3xl"
-      >
+      <div className="container mx-auto max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle>Book an Appointment with {biolink.title}</CardTitle>
@@ -198,11 +191,11 @@ export default function Booking() {
                 <Button
                   onClick={() => {
                     const currentForm = document.querySelector(
-                      step === 1 ? '#dateForm' : '#infoForm'
+                      step === 1 ? '#dateForm' : step === 2 ? '#infoForm' : ''
                     ) as HTMLFormElement;
                     if (currentForm) {
                       currentForm.requestSubmit();
-                    } else if (step >= 3) {
+                    } else {
                       handleFormSubmit(formData);
                     }
                   }}
@@ -217,7 +210,7 @@ export default function Booking() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }
