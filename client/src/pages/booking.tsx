@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,24 +9,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { InsertAppointment } from "@shared/schema";
+import type { InsertAppointment, Biolink } from "@shared/schema";
 import { StepContent } from "@/components/booking/steps";
 
 export default function Booking() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<InsertAppointment>>({});
   const [, navigate] = useLocation();
+  const search = useSearch();
   const { toast } = useToast();
+
+  // Get username from URL query
+  const username = new URLSearchParams(search).get("username");
+
+  // Fetch user's biolink
+  const { data: biolink } = useQuery<Biolink>({
+    queryKey: ["/api/public/biolinks", username],
+    enabled: !!username,
+  });
+
+  // Fetch available time slots when date is selected
+  const { data: availableSlots } = useQuery<Array<{ start: Date; end: Date }>>({
+    queryKey: ["/api/available-slots", biolink?.userId, formData.appointmentDate],
+    enabled: !!biolink?.userId && !!formData.appointmentDate,
+  });
 
   const bookingMutation = useMutation({
     mutationFn: async (data: InsertAppointment) => {
-      // Format the date to ISO string before sending
       const formattedData = {
         ...data,
-        appointmentDate: data.appointmentDate.toISOString(),
+        appointmentDate: new Date(data.appointmentDate).toISOString(),
       };
       const res = await apiRequest("POST", "/api/appointments", formattedData);
       return res.json();
@@ -58,16 +73,17 @@ export default function Booking() {
     }
   };
 
-  const handleContinue = () => {
-    // Submit the current form
-    const currentForm = document.querySelector(step === 1 ? '#dateForm' : '#infoForm') as HTMLFormElement;
-    if (currentForm) {
-      currentForm.requestSubmit();
-    } else if (step >= 3) {
-      // For review and confirmation steps, just proceed
-      handleFormSubmit(formData);
-    }
-  };
+  if (!username || !biolink) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Profile Not Found</h1>
+        <p className="text-muted-foreground mb-4">
+          The requested profile could not be found.
+        </p>
+        <Button onClick={() => navigate("/")}>Return Home</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -79,7 +95,7 @@ export default function Booking() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Book an Appointment</CardTitle>
+            <CardTitle>Book an Appointment with {biolink.title}</CardTitle>
             <CardDescription>
               Complete the form below to schedule your appointment
             </CardDescription>
@@ -112,6 +128,7 @@ export default function Booking() {
                 formData={formData}
                 onSubmit={handleFormSubmit}
                 isLoading={bookingMutation.isPending}
+                availableSlots={availableSlots}
               />
 
               {/* Navigation Buttons */}
@@ -131,7 +148,16 @@ export default function Booking() {
                   </Button>
                 )}
                 <Button 
-                  onClick={handleContinue}
+                  onClick={() => {
+                    const currentForm = document.querySelector(
+                      step === 1 ? '#dateForm' : '#infoForm'
+                    ) as HTMLFormElement;
+                    if (currentForm) {
+                      currentForm.requestSubmit();
+                    } else if (step >= 3) {
+                      handleFormSubmit(formData);
+                    }
+                  }}
                   disabled={bookingMutation.isPending}
                   className="ml-auto"
                 >

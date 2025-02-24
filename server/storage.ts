@@ -225,6 +225,10 @@ export class DatabaseStorage implements IStorage {
     if (!settings.length) return [];
 
     const setting = settings[0];
+    // Set default values if null
+    const slotDuration = setting.slotDuration || 30;
+    const bufferTime = setting.bufferTime || 15;
+
     const [startHour, startMinute] = setting.startTime.split(":").map(Number);
     const [endHour, endMinute] = setting.endTime.split(":").map(Number);
 
@@ -239,7 +243,7 @@ export class DatabaseStorage implements IStorage {
 
     while (currentSlot < endTime) {
       const slotEnd = new Date(currentSlot);
-      slotEnd.setMinutes(slotEnd.getMinutes() + setting.slotDuration);
+      slotEnd.setMinutes(slotEnd.getMinutes() + slotDuration);
 
       if (slotEnd <= endTime) {
         slots.push({
@@ -248,7 +252,7 @@ export class DatabaseStorage implements IStorage {
         });
       }
 
-      currentSlot.setMinutes(currentSlot.getMinutes() + setting.slotDuration + setting.bufferTime);
+      currentSlot.setMinutes(currentSlot.getMinutes() + slotDuration + bufferTime);
     }
 
     // Filter out slots that overlap with existing appointments
