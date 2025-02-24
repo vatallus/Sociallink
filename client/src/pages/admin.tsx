@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Link as LinkIcon } from "lucide-react";
+import { Loader2, Link as LinkIcon, Upload, User } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,6 +17,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,11 +46,34 @@ import type { Appointment } from "@shared/schema";
 
 export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
     queryKey: ["/api/appointments"],
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name?: string; address?: string; avatarUrl?: string }) => {
+      const res = await apiRequest("PATCH", "/api/user/profile", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Success",
+        description: "Profile updated successfully.",
+      });
+      setIsProfileOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile.",
+        variant: "destructive",
+      });
+    },
   });
 
   const updateStatusMutation = useMutation({
@@ -83,7 +118,73 @@ export default function AdminDashboard() {
       {/* Navigation Bar */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
+          <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  {user?.avatarUrl ? (
+                    <AvatarImage src={user.avatarUrl} alt={user?.name || user?.username} />
+                  ) : (
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                {user?.name || user?.username}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogDescription>
+                  Update your profile information
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    defaultValue={user?.name || ""}
+                    onChange={(e) =>
+                      updateProfileMutation.mutate({ name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    defaultValue={user?.address || ""}
+                    onChange={(e) =>
+                      updateProfileMutation.mutate({ address: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="avatar">Avatar URL</Label>
+                  <Input
+                    id="avatar"
+                    type="url"
+                    defaultValue={user?.avatarUrl || ""}
+                    placeholder="https://example.com/avatar.jpg"
+                    onChange={(e) =>
+                      updateProfileMutation.mutate({ avatarUrl: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  onClick={() => setIsProfileOpen(false)}
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Link href="/admin">
             <Button variant="outline" className="flex items-center gap-2">
               Appointments
@@ -142,9 +243,9 @@ export default function AdminDashboard() {
                   <TableCell>{appointment.fullName}</TableCell>
                   <TableCell>{appointment.phoneNumber}</TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={
-                        appointment.status === "confirmed" 
+                        appointment.status === "confirmed"
                           ? "default"
                           : appointment.status === "cancelled"
                           ? "destructive"

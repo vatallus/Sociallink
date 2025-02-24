@@ -6,6 +6,9 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  name: text("name"),
+  address: text("address"),
+  avatarUrl: text("avatar_url"),
 });
 
 export const biolinks = pgTable("biolinks", {
@@ -52,6 +55,10 @@ export const availabilitySettings = pgTable("availability_settings", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+}).extend({
+  name: z.string().optional(),
+  address: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 export const insertBiolinkSchema = createInsertSchema(biolinks).omit({

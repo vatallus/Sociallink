@@ -209,5 +209,20 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Update the profile route
+  app.patch("/api/user/profile", requireAuth, async (req, res) => {
+    try {
+      const { name, address, avatarUrl } = req.body;
+      const user = await storage.updateUser(req.user!.id, {
+        name,
+        address,
+        avatarUrl,
+      });
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update profile" });
+    }
+  });
+
   return createServer(app);
 }
