@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Link as LinkIcon, Upload, User } from "lucide-react";
+import { Loader2, Link as LinkIcon, Upload, User, Plus, Calendar } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -37,12 +37,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar as CalendarInput } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Link } from "wouter";
-import type { Appointment } from "@shared/schema";
+import type { Appointment, InsertAppointment } from "@shared/schema";
 
 const STATUS_LABELS = {
   pending: "Chờ xác nhận",
@@ -50,9 +52,21 @@ const STATUS_LABELS = {
   cancelled: "Đã hủy"
 };
 
+const INITIAL_APPOINTMENT = {
+  fullName: "",
+  phoneNumber: "",
+  appointmentDate: new Date(),
+  notes: "",
+  duration: 30,
+  status: "pending",
+};
+
 export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<Date | undefined>();
+  const [editingAppointment, setEditingAppointment] = useState<Partial<InsertAppointment> | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -62,27 +76,111 @@ export default function AdminDashboard() {
     queryKey: ["/api/appointments"],
   });
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: { name?: string; address?: string; avatarUrl?: string }) => {
-      const res = await apiRequest("PATCH", "/api/user/profile", data);
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (data: InsertAppointment) => {
+      const res = await apiRequest("POST", "/api/appointments", data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      setIsAppointmentModalOpen(false);
+      setEditingAppointment(null);
       toast({
         title: "Thành công",
-        description: "Đã cập nhật thông tin cá nhân.",
+        description: "Đã tạo lịch hẹn mới.",
       });
-      setIsProfileOpen(false);
     },
     onError: (error) => {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể cập nhật thông tin.",
+        description: error.message || "Không thể tạo lịch hẹn.",
         variant: "destructive",
       });
     },
   });
+
+  const updateAppointmentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertAppointment> }) => {
+      const res = await apiRequest("PATCH", `/api/appointments/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      setIsAppointmentModalOpen(false);
+      setEditingAppointment(null);
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật lịch hẹn.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật lịch hẹn.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAppointmentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const appointmentDate = selectedTime || new Date();
+    const data = {
+      fullName: formData.get('fullName') as string,
+      phoneNumber: formData.get('phoneNumber') as string,
+      appointmentDate: appointmentDate,
+      notes: formData.get('notes') as string,
+      duration: parseInt(formData.get('duration') as string) || 30,
+      status: formData.get('status') as string || "pending",
+    };
+
+    if (editingAppointment?.id) {
+      updateAppointmentMutation.mutate({
+        id: editingAppointment.id as number,
+        data,
+      });
+    } else {
+      createAppointmentMutation.mutate(data as InsertAppointment);
+    }
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    setSelectedTime(new Date(appointment.appointmentDate));
+    setIsAppointmentModalOpen(true);
+  };
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await apiRequest("PATCH", `/api/appointments/${id}/status`, { status });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật trạng thái lịch hẹn.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật trạng thái.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const filteredAppointments = appointments?.filter(
+    (apt) => statusFilter === "all" || apt.status === statusFilter
+  );
+
+  const handleStatusUpdate = (id: number, status: string) => {
+    updateStatusMutation.mutate({ id, status });
+  };
 
   const uploadAvatarMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -142,34 +240,28 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/appointments/${id}/status`, { status });
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { name?: string; address?: string; avatarUrl?: string }) => {
+      const res = await apiRequest("PATCH", "/api/user/profile", data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Thành công",
-        description: "Đã cập nhật trạng thái lịch hẹn.",
+        description: "Đã cập nhật thông tin cá nhân.",
       });
+      setIsProfileOpen(false);
     },
     onError: (error) => {
       toast({
         title: "Lỗi",
-        description: error.message || "Không thể cập nhật trạng thái.",
+        description: error.message || "Không thể cập nhật thông tin.",
         variant: "destructive",
       });
     },
   });
 
-  const filteredAppointments = appointments?.filter(
-    (apt) => statusFilter === "all" || apt.status === statusFilter
-  );
-
-  const handleStatusUpdate = (id: number, status: string) => {
-    updateStatusMutation.mutate({ id, status });
-  };
 
   if (isLoading) {
     return (
@@ -290,6 +382,17 @@ export default function AdminDashboard() {
               Hồ sơ
             </Button>
           </Link>
+          <Button 
+            onClick={() => {
+              setEditingAppointment(null);
+              setSelectedTime(undefined);
+              setIsAppointmentModalOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm lịch hẹn
+          </Button>
         </div>
       </div>
 
@@ -351,6 +454,13 @@ export default function AdminDashboard() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditAppointment(appointment)}
+                      >
+                        Chỉnh sửa
+                      </Button>
                       {appointment.status === "pending" && (
                         <>
                           <Button
@@ -378,6 +488,96 @@ export default function AdminDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isAppointmentModalOpen} onOpenChange={setIsAppointmentModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAppointment ? "Chỉnh sửa lịch hẹn" : "Thêm lịch hẹn mới"}
+            </DialogTitle>
+            <DialogDescription>
+              Điền thông tin chi tiết để {editingAppointment ? "cập nhật" : "tạo"} lịch hẹn
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAppointmentSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="fullName">Họ tên</Label>
+                <Input
+                  id="fullName"
+                  name="fullName"
+                  defaultValue={editingAppointment?.fullName || ""}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  defaultValue={editingAppointment?.phoneNumber || ""}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Ngày giờ khám</Label>
+                <CalendarInput
+                  mode="single"
+                  selected={selectedTime}
+                  onSelect={setSelectedTime}
+                  disabled={(date) => date < new Date()}
+                  className="rounded-md border"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="duration">Thời lượng (phút)</Label>
+                <Input
+                  id="duration"
+                  name="duration"
+                  type="number"
+                  min="15"
+                  max="180"
+                  defaultValue={editingAppointment?.duration || "30"}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="status">Trạng thái</Label>
+                <Select name="status" defaultValue={editingAppointment?.status || "pending"}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Chờ xác nhận</SelectItem>
+                    <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                    <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="notes">Ghi chú</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  defaultValue={editingAppointment?.notes || ""}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAppointmentModalOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button type="submit">
+                {editingAppointment ? "Cập nhật" : "Tạo lịch hẹn"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
