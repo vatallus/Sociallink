@@ -124,16 +124,24 @@ export default function AdminDashboard() {
 
   const handleAppointmentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedTime) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn thời gian khám",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
 
-    const appointmentDate = selectedTime || new Date();
     const data = {
       fullName: formData.get('fullName') as string,
       phoneNumber: formData.get('phoneNumber') as string,
-      appointmentDate: appointmentDate,
+      appointmentDate: selectedTime,
       notes: formData.get('notes') as string,
-      duration: parseInt(formData.get('duration') as string) || 30,
       status: formData.get('status') as string || "pending",
     };
 
@@ -223,7 +231,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { 
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Lỗi",
         description: "Kích thước file không được vượt quá 5MB.",
@@ -382,7 +390,7 @@ export default function AdminDashboard() {
               Hồ sơ
             </Button>
           </Link>
-          <Button 
+          <Button
             onClick={() => {
               setEditingAppointment(null);
               setSelectedTime(undefined);
@@ -527,18 +535,6 @@ export default function AdminDashboard() {
                   onSelect={setSelectedTime}
                   disabled={(date) => date < new Date()}
                   className="rounded-md border"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="duration">Thời lượng (phút)</Label>
-                <Input
-                  id="duration"
-                  name="duration"
-                  type="number"
-                  min="15"
-                  max="180"
-                  defaultValue={editingAppointment?.duration || "30"}
-                  required
                 />
               </div>
               <div className="grid gap-2">
