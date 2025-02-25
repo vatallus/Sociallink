@@ -2,7 +2,6 @@ import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -16,7 +15,6 @@ export const users = pgTable("users", {
   workingHours: text("working_hours"),
 });
 
-// Biolinks table
 export const biolinks = pgTable("biolinks", {
   id: serial("id").primaryKey(),
   userId: serial("user_id").references(() => users.id),
@@ -24,28 +22,26 @@ export const biolinks = pgTable("biolinks", {
   description: text("description"),
   slug: text("slug").notNull().unique(),
   theme: text("theme").default("default"),
-  specialty: text("specialty"),
-  clinicAddress: text("clinic_address"),
-  workingHours: text("working_hours"),
+  specialty: text("specialty"),        
+  clinicAddress: text("clinic_address"), 
+  workingHours: text("working_hours"), 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Appointments table
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => users.id),
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
   appointmentDate: timestamp("appointment_date").notNull(),
-  duration: integer("duration").notNull().default(30),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
-  biolinkId: serial("biolink_id").references(() => biolinks.id),
-  specialty: text("specialty"),
-  clinicAddress: text("clinic_address"),
+  biolinkId: serial("biolink_id").references(() => biolinks.id), 
+  specialty: text("specialty"),        
+  clinicAddress: text("clinic_address"), 
 });
 
-// Availability Settings table
 export const availabilitySettings = pgTable("availability_settings", {
   id: serial("id").primaryKey(),
   userId: serial("user_id").references(() => users.id),
@@ -57,7 +53,6 @@ export const availabilitySettings = pgTable("availability_settings", {
   slotDuration: integer("slot_duration").default(30),
 });
 
-// Zod Schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
@@ -65,6 +60,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
 }).extend({
   email: z.string().email("Email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+  name: z.string().optional(),
+  address: z.string().optional(),
+  avatarUrl: z.string().optional(),
+  specialty: z.string().optional(),
+  clinicAddress: z.string().optional(),
+  workingHours: z.string().optional(),
 });
 
 export const insertBiolinkSchema = createInsertSchema(biolinks).omit({
@@ -75,13 +76,16 @@ export const insertBiolinkSchema = createInsertSchema(biolinks).omit({
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
+}).extend({
+  biolinkId: z.number().optional(),
+  specialty: z.string().optional(),
+  clinicAddress: z.string().optional(),
 });
 
 export const insertAvailabilitySettingSchema = createInsertSchema(availabilitySettings).omit({
   id: true,
 });
 
-// TypeScript Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
