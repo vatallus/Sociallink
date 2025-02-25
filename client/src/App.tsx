@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Booking from "@/pages/booking";
 import Admin from "@/pages/admin";
 import Biolinks from "@/pages/biolinks";
+import Profile from "@/pages/profile";
 import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import PublicBiolink from "@/pages/bio/[slug]";
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <ProtectedRoute path="/admin" component={Admin} />
       <ProtectedRoute path="/biolinks" component={Biolinks} />
+      <ProtectedRoute path="/profile" component={Profile} />
       <Route path="/bio/:slug" component={PublicBiolink} />
       <Route component={NotFound} />
     </Switch>
